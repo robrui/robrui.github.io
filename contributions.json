@@ -4,7 +4,7 @@
     "github": "robrui",
     "email": "robert.ruidisch@gmail.com",
     "title": "Signal Processing Machine Learning Engineer",
-    "education": "TU München - Electrical Engineering (M.Sc.), Thesis: RL + Transformer Models"
+    "education": "TU M\u00fcnchen - Electrical Engineering (M.Sc.), Thesis: RL + Transformer Models"
   },
   "meta": {
     "description": "Curated open-source contributions with learning summaries for blog/portfolio",
@@ -30,14 +30,16 @@
       ],
       "issue_url": "https://github.com/scipy/scipy/issues/22940",
       "learning_summary": "Floating-point modulo can produce exactly 2*pi, causing sawtooth(width=1) to divide by zero in the falling-ramp formula",
-      "detailed_summary": "Die Funktion scipy.signal.sawtooth() produziert NaN, wenn width=1 gesetzt ist und der Eingabewert durch IEEE-754-Rundung im Modulo exakt 2*pi ergibt (z.B. sawtooth(-1e-16)). Ursache: (-1e-16) % (2*pi) = 2*pi - 1e-16, aber 1e-16 liegt unter der halben Ulp von 2*pi, daher rundet das Ergebnis auf exakt 2*pi. Der Vergleich tmod < 2*pi schlagt fehl, der Wert fallt in die fallende Rampe, die durch (1-width) = 0 teilt. Der Fix erkennt width ≈ 1 und width ≈ 0 als Edge Cases und verwendet die korrekte Ein-Rampen-Formel. Ein Test fur width=1 mit negativen Werten und Array-width wurde hinzugefugt.",
+      "detailed_summary": "Die Funktion scipy.signal.sawtooth() produziert NaN, wenn width=1 gesetzt ist und der Eingabewert durch IEEE-754-Rundung im Modulo exakt 2*pi ergibt (z.B. sawtooth(-1e-16)). Ursache: (-1e-16) % (2*pi) = 2*pi - 1e-16, aber 1e-16 liegt unter der halben Ulp von 2*pi, daher rundet das Ergebnis auf exakt 2*pi. Der Vergleich tmod < 2*pi schlagt fehl, der Wert fallt in die fallende Rampe, die durch (1-width) = 0 teilt. Der Fix erkennt width \u2248 1 und width \u2248 0 als Edge Cases und verwendet die korrekte Ein-Rampen-Formel. Ein Test fur width=1 mit negativen Werten und Array-width wurde hinzugefugt.",
       "skills_developed": [
         "Signal processing",
         "Floating-point arithmetic",
         "SciPy internals",
         "Array API compatibility"
       ],
-      "blog_body": "## Wenn sawtooth(width=1) NaN produziert: Ein Floating-Point-Bug in SciPy\n\n### Das Problem\n`scipy.signal.sawtooth(-1e-16, width=1)` gibt NaN zuruck. Die Funktion sollte einen simplen Sageszahn von -1 bis 1 produzieren, aber stattdessen crasht die Berechnung.\n\n### Die Ursache\nDie Sageszahn-Funktion teilt das Intervall [0, 2*pi) in zwei Bereiche: eine steigende Rampe (0 bis width*2*pi) und eine fallende Rampe (width*2*pi bis 2*pi). Bei width=1 soll die steigende Rampe das gesamte Intervall abdecken.\n\nDer Bug liegt in der IEEE 754-Arithmetik: `(-1e-16) % (2*pi)` = `2*pi - 1e-16`. Aber 1e-16 ist so klein (unter der Halfte des ULP von 2*pi, der ~8.9e-16 betragt), dass das Ergebnis auf exakt **2*pi** gerundet wird. Der Vergleich `tmod < 2*pi` wird False, der Wert fallt in den fallenden Bereich - und dort wird durch `(1 - width) = 0` geteilt, was NaN ergibt.\n\n### Die Losung\nStatt zu versuchen, den Vergleichstoleranz zu justieren (was andere Edge Cases aufreisst), werden width ≈ 1 und width ≈ 0 als Spezialfalle behandelt. Wenn width effektiv 1 ist, wird direkt die steigende Rampe fur alle Punkte angewendet. Bei width=0 entsprechend die fallende Rampe. Die Toleranz von 1e-15 ist weit unter jeder praktisch relevanten Abweichung von 0 oder 1.\n\n### Was ich gelernt habe\n1. **Floating Point ist nicht trivial**: Modulo-Operationen mit transzendenten Konstanten (pi) sind prazise genug fur die meisten Falle, aber nicht fur alle. 1e-16 liegt unter der Maschinengenauigkeit von 64-bit Floats bei diesen Grossenordnungen.\n2. **Indirekte Division-by-Zero**: Der Bug wurde nicht durch eine offensichtliche Division durch Null verursacht, sondern durch die Kombination von FP-Rundung und einer strikten `<`-Vergleichsoperation.\n3. **API-Kompatibilitat**: SciPy Pythran-Unterstutzung und der Array-API-Layer (xp, xpx) mussen beachtet werden. Der Fix muss mit numpy, cupy und anderen Backends funktionieren.\n4. **Tests schlagen keine falsch positiven**: Die existierenden Tests haben den Bug nicht gefangen, weil sie mit `sawtooth(2*pi)` getestet haben (wo `2*pi % (2*pi) = 0`, was korrekt funktioniert), aber nicht mit negativen Werten dicht unter Null."
+      "blog_body": "## Wenn sawtooth(width=1) NaN produziert: Ein Floating-Point-Bug in SciPy\n\n### Das Problem\n`scipy.signal.sawtooth(-1e-16, width=1)` gibt NaN zuruck. Die Funktion sollte einen simplen Sageszahn von -1 bis 1 produzieren, aber stattdessen crasht die Berechnung.\n\n### Die Ursache\nDie Sageszahn-Funktion teilt das Intervall [0, 2*pi) in zwei Bereiche: eine steigende Rampe (0 bis width*2*pi) und eine fallende Rampe (width*2*pi bis 2*pi). Bei width=1 soll die steigende Rampe das gesamte Intervall abdecken.\n\nDer Bug liegt in der IEEE 754-Arithmetik: `(-1e-16) % (2*pi)` = `2*pi - 1e-16`. Aber 1e-16 ist so klein (unter der Halfte des ULP von 2*pi, der ~8.9e-16 betragt), dass das Ergebnis auf exakt **2*pi** gerundet wird. Der Vergleich `tmod < 2*pi` wird False, der Wert fallt in den fallenden Bereich - und dort wird durch `(1 - width) = 0` geteilt, was NaN ergibt.\n\n### Die Losung\nStatt zu versuchen, den Vergleichstoleranz zu justieren (was andere Edge Cases aufreisst), werden width \u2248 1 und width \u2248 0 als Spezialfalle behandelt. Wenn width effektiv 1 ist, wird direkt die steigende Rampe fur alle Punkte angewendet. Bei width=0 entsprechend die fallende Rampe. Die Toleranz von 1e-15 ist weit unter jeder praktisch relevanten Abweichung von 0 oder 1.\n\n### Was ich gelernt habe\n1. **Floating Point ist nicht trivial**: Modulo-Operationen mit transzendenten Konstanten (pi) sind prazise genug fur die meisten Falle, aber nicht fur alle. 1e-16 liegt unter der Maschinengenauigkeit von 64-bit Floats bei diesen Grossenordnungen.\n2. **Indirekte Division-by-Zero**: Der Bug wurde nicht durch eine offensichtliche Division durch Null verursacht, sondern durch die Kombination von FP-Rundung und einer strikten `<`-Vergleichsoperation.\n3. **API-Kompatibilitat**: SciPy Pythran-Unterstutzung und der Array-API-Layer (xp, xpx) mussen beachtet werden. Der Fix muss mit numpy, cupy und anderen Backends funktionieren.\n4. **Tests schlagen keine falsch positiven**: Die existierenden Tests haben den Bug nicht gefangen, weil sie mit `sawtooth(2*pi)` getestet haben (wo `2*pi % (2*pi) = 0`, was korrekt funktioniert), aber nicht mit negativen Werten dicht unter Null.",
+      "status": "closed",
+      "notes": "Closed, not merged."
     },
     {
       "date": "2026-04-25",
@@ -62,7 +64,9 @@
         "Empty array edge cases",
         "Interpolation theory"
       ],
-      "blog_body": "## Wenn np.interp mit leeren Arrays crasht: Ein simpler Fix mit Tiefgang\n\n### Das Problem\n`np.interp([], [], [])` -> ValueError: 'array of sample points is empty'. Aber wenn x leer ist, gibt es nichts zu interpolieren - das Ergebnis ist trivial ein leeres Array.\n\n### Die Ursache\nDie C-Implementierung `arr_interp` in `compiled_base.c` pruft `if (lenxp == 0)` und wirft einen Fehler. Das ist korrekt fur nicht-leeres x (man kann nicht interpolieren ohne Samples), aber ubersieht den Fall x=0.\n\n### Warum es Jahre unentdeckt blieb\nWeil `np.interp([], [1, 2], [3, 4])` bereits funktioniert! Der C-Code verarbeitet leeres x korrekt, wenn xp/fp nicht leer sind. Nur der Fall \"alle drei leer\" hat den Bug getriggert. Drei verschiedene PR-Versuche (alle geschlossen) zeigen: der Fix ist nicht trivial, obwohl er klein ist.\n\n### Die Losung\nFruher Return im Python-Wrapper: Wenn `x.size == 0`, gib ein leeres Array mit korrektem Dtype zuruck (float64 oder complex128). Minimaler, backward-kompatibler Fix in 2 Dateien.\n\n### Was ich gelernt habe\n1. np.interp delegiert an C-Code (compiled_interp) - der Bug war tief im C-Code versteckt.\n2. Der Python-Wrapper in _function_base_impl.py war der richtige Ort fur den Fix, nicht der C-Code.\n3. Vier unabhangige Leute haben das gleiche Issue gefixt (30334, 30451, 30794 - alle geschlossen), aber keiner hat durchgehalten. Beharrlichkeit zahlt.\n4. Ein fix der nur 3 Zeilen andert kann 4 PR-Versuche und Monate brauchen um akzeptiert zu werden."
+      "blog_body": "## Wenn np.interp mit leeren Arrays crasht: Ein simpler Fix mit Tiefgang\n\n### Das Problem\n`np.interp([], [], [])` -> ValueError: 'array of sample points is empty'. Aber wenn x leer ist, gibt es nichts zu interpolieren - das Ergebnis ist trivial ein leeres Array.\n\n### Die Ursache\nDie C-Implementierung `arr_interp` in `compiled_base.c` pruft `if (lenxp == 0)` und wirft einen Fehler. Das ist korrekt fur nicht-leeres x (man kann nicht interpolieren ohne Samples), aber ubersieht den Fall x=0.\n\n### Warum es Jahre unentdeckt blieb\nWeil `np.interp([], [1, 2], [3, 4])` bereits funktioniert! Der C-Code verarbeitet leeres x korrekt, wenn xp/fp nicht leer sind. Nur der Fall \"alle drei leer\" hat den Bug getriggert. Drei verschiedene PR-Versuche (alle geschlossen) zeigen: der Fix ist nicht trivial, obwohl er klein ist.\n\n### Die Losung\nFruher Return im Python-Wrapper: Wenn `x.size == 0`, gib ein leeres Array mit korrektem Dtype zuruck (float64 oder complex128). Minimaler, backward-kompatibler Fix in 2 Dateien.\n\n### Was ich gelernt habe\n1. np.interp delegiert an C-Code (compiled_interp) - der Bug war tief im C-Code versteckt.\n2. Der Python-Wrapper in _function_base_impl.py war der richtige Ort fur den Fix, nicht der C-Code.\n3. Vier unabhangige Leute haben das gleiche Issue gefixt (30334, 30451, 30794 - alle geschlossen), aber keiner hat durchgehalten. Beharrlichkeit zahlt.\n4. Ein fix der nur 3 Zeilen andert kann 4 PR-Versuche und Monate brauchen um akzeptiert zu werden.",
+      "status": "closed",
+      "notes": "Closed, not merged."
     },
     {
       "date": "2026-04-24",
@@ -86,7 +90,9 @@
         "Module resolution debugging",
         "__init__.py patterns"
       ],
-      "blog_body": "## Python Import Fallstricke: Wenn eine Funktion dein Modul verdeckt\n\n### Das Problem\nIn OpenPipe/ART existiert ein Modul `art.rewards.ruler` und eine gleichnamige Export-Funktion in der `__init__.py`. Beim Import landet zuerst die Funktion im Namespace, dann schlagt der Submodul-Import fehl weil Python die Funktion statt des Moduls findet.\n\n### Die Losung\nAlias-Import: `from . import ruler as _ruler_module` vermeidet die Kollision.\n\n### Was ich gelernt habe\nPython's Import-System ist nicht magisch - es sucht Namen in Namespaces. Ein sauberer `__init__.py` muss Name-Kollisionen zwischen Export-Funktionen und Submodulen vermeiden."
+      "blog_body": "## Python Import Fallstricke: Wenn eine Funktion dein Modul verdeckt\n\n### Das Problem\nIn OpenPipe/ART existiert ein Modul `art.rewards.ruler` und eine gleichnamige Export-Funktion in der `__init__.py`. Beim Import landet zuerst die Funktion im Namespace, dann schlagt der Submodul-Import fehl weil Python die Funktion statt des Moduls findet.\n\n### Die Losung\nAlias-Import: `from . import ruler as _ruler_module` vermeidet die Kollision.\n\n### Was ich gelernt habe\nPython's Import-System ist nicht magisch - es sucht Namen in Namespaces. Ein sauberer `__init__.py` muss Name-Kollisionen zwischen Export-Funktionen und Submodulen vermeiden.",
+      "status": "open",
+      "notes": "Open on GitHub. no comments"
     },
     {
       "date": "2026-04-24",
@@ -111,7 +117,9 @@
         "GRPO algorithm",
         "Numerical stability"
       ],
-      "blog_body": "## Wenn KL-Divergenz dein Training sabotiert: Spurious Gradients in GRPO\n\n### Das Problem\nGRPO normalisiert Rewards: `advantages = (r - mean(r)) / std(r)`. Wenn alle Antworten identische Rewards bekommen, ist std(r)=0.\n\nEin epsilon-Clip `std = max(std, 1e-4)` verhindert NaN, aber produziert Spurious Gradients: Der KL-Penalty propagiert weiter, obwohl das Reward-Signal keine Information enthalt.\n\n### Die Losung\nKL-Gradients maskieren wenn std(r) effektiv Null ist: `kl_loss = kl_loss * 0.0` detacht.\n\n### Was ich gelernt habe\nRL-Training mit KL-Penalty ist ein Balanceakt. Wenn das Reward-Signal ausfallt, darf der KL-Term nicht allein weiterlernen - er produziert dann Rauschen statt sinnvoller Updates."
+      "blog_body": "## Wenn KL-Divergenz dein Training sabotiert: Spurious Gradients in GRPO\n\n### Das Problem\nGRPO normalisiert Rewards: `advantages = (r - mean(r)) / std(r)`. Wenn alle Antworten identische Rewards bekommen, ist std(r)=0.\n\nEin epsilon-Clip `std = max(std, 1e-4)` verhindert NaN, aber produziert Spurious Gradients: Der KL-Penalty propagiert weiter, obwohl das Reward-Signal keine Information enthalt.\n\n### Die Losung\nKL-Gradients maskieren wenn std(r) effektiv Null ist: `kl_loss = kl_loss * 0.0` detacht.\n\n### Was ich gelernt habe\nRL-Training mit KL-Penalty ist ein Balanceakt. Wenn das Reward-Signal ausfallt, darf der KL-Term nicht allein weiterlernen - er produziert dann Rauschen statt sinnvoller Updates.",
+      "status": "open",
+      "notes": "Open on GitHub. no comments"
     },
     {
       "date": "2026-04-24",
@@ -136,7 +144,9 @@
         "Numerical stability",
         "API design"
       ],
-      "blog_body": "## Wenn dein Signal-Filter stumm falsch rechnet: Savitzky-Golay mit geraden Fenstern\n\n### Das Problem\n`savgol_filter(data, 4, 2)` gibt eine Ausgabe ohne Fehler - aber das Ergebnis ist falsch. Bis zu 17 Fehler bei quadratischen Signalen.\n\n### Die Ursache\nSG-Filter fittet ein Polynom und wertet am Mittelpunkt aus. Bei Fenster 4 gibt es keinen echten Mittelpunkt - die Koeffizienten sind fur Position 1.5 (zwischen Index 1 und 2). `convolve1d` zentriert aber bei einer ganzen Zahl.\n\n### Die Losung\n`ValueError` fur gerade Fenster in `savgol_filter()`. Fortgeschrittene konnen `savgol_coeffs()` mit explizitem `pos` nutzen.\n\n### Was ich gelernt habe\nManchmal ist der beste Fix, fruh zu scheitern statt stumm falsch zu rechnen."
+      "blog_body": "## Wenn dein Signal-Filter stumm falsch rechnet: Savitzky-Golay mit geraden Fenstern\n\n### Das Problem\n`savgol_filter(data, 4, 2)` gibt eine Ausgabe ohne Fehler - aber das Ergebnis ist falsch. Bis zu 17 Fehler bei quadratischen Signalen.\n\n### Die Ursache\nSG-Filter fittet ein Polynom und wertet am Mittelpunkt aus. Bei Fenster 4 gibt es keinen echten Mittelpunkt - die Koeffizienten sind fur Position 1.5 (zwischen Index 1 und 2). `convolve1d` zentriert aber bei einer ganzen Zahl.\n\n### Die Losung\n`ValueError` fur gerade Fenster in `savgol_filter()`. Fortgeschrittene konnen `savgol_coeffs()` mit explizitem `pos` nutzen.\n\n### Was ich gelernt habe\nManchmal ist der beste Fix, fruh zu scheitern statt stumm falsch zu rechnen.",
+      "status": "closed",
+      "notes": "Closed, not merged."
     },
     {
       "date": "2026-04-24",
@@ -160,7 +170,9 @@
         "Linear algebra",
         "Error handling patterns"
       ],
-      "blog_body": "## numpy.linalg.pinv TypeError: Wenn finfo auf Integer trifft\n\n### Das Problem\n`np.linalg.pinv(int_array, rtol=None)` -> TypeError. finfo() unterstutzt nur Float-Typen.\n\n### Die Ursache\n`pinv` mit `rtol=None` berechnet `rtol = max(rows, cols) * finfo(dtype).eps`. Aber Integer haben keinen eps-Wert.\n\n### Die Losung\nFloat-Konvertierung vor finfo: Prüfen ob dtype ein Float ist, sonst zu float64 konvertieren.\n\n### Was ich gelernt habe\nNumpy unterscheidet strikt zwischen Integer und Float. Viele Algorithmen brauchen float-Eigenschaften wie eps - ohne explizite Konvertierung crasht der Code."
+      "blog_body": "## numpy.linalg.pinv TypeError: Wenn finfo auf Integer trifft\n\n### Das Problem\n`np.linalg.pinv(int_array, rtol=None)` -> TypeError. finfo() unterstutzt nur Float-Typen.\n\n### Die Ursache\n`pinv` mit `rtol=None` berechnet `rtol = max(rows, cols) * finfo(dtype).eps`. Aber Integer haben keinen eps-Wert.\n\n### Die Losung\nFloat-Konvertierung vor finfo: Pr\u00fcfen ob dtype ein Float ist, sonst zu float64 konvertieren.\n\n### Was ich gelernt habe\nNumpy unterscheidet strikt zwischen Integer und Float. Viele Algorithmen brauchen float-Eigenschaften wie eps - ohne explizite Konvertierung crasht der Code.",
+      "status": "open",
+      "notes": "Open on GitHub. 2 comment(s)"
     },
     {
       "date": "2026-04-24",
@@ -184,7 +196,9 @@
         "Random sampling",
         "API contract analysis"
       ],
-      "blog_body": "## numpy.random.choice: Wenn shuffle=False nicht das tut was es sagt\n\n### Das Problem\n`rng.choice(4, 4, replace=False, shuffle=False, p=[...])` -> Ergebnis ist geshuffelt.\n\n### Die Ursache\nDer nicht-uniforme Sampling-Pfad hatte keinen check fur den shuffle-Parameter. Immer geshuffelt.\n\n### Die Losung\n`if shuffle: _shuffle_int(...)` - einfache Bedingung, ubersehener Spezialfall.\n\n### Was ich gelernt habe\n300 Zeilen Cython schwer zu debuggen. Viele Code-Pfade, viele Edge Cases. Ein guter Test fur shuffle=False mit nicht-uniformen Wahrscheinlichkeiten hatte das sofort gefunden."
+      "blog_body": "## numpy.random.choice: Wenn shuffle=False nicht das tut was es sagt\n\n### Das Problem\n`rng.choice(4, 4, replace=False, shuffle=False, p=[...])` -> Ergebnis ist geshuffelt.\n\n### Die Ursache\nDer nicht-uniforme Sampling-Pfad hatte keinen check fur den shuffle-Parameter. Immer geshuffelt.\n\n### Die Losung\n`if shuffle: _shuffle_int(...)` - einfache Bedingung, ubersehener Spezialfall.\n\n### Was ich gelernt habe\n300 Zeilen Cython schwer zu debuggen. Viele Code-Pfade, viele Edge Cases. Ein guter Test fur shuffle=False mit nicht-uniformen Wahrscheinlichkeiten hatte das sofort gefunden.",
+      "status": "closed",
+      "notes": "Closed, not merged."
     },
     {
       "date": "2026-04-26",
@@ -203,14 +217,16 @@
       ],
       "issue_url": "https://github.com/scipy/scipy/issues/23604",
       "learning_summary": "CWT peak detection bug: SNR computed at the end of each ridge instead of ridge maximum, causing false negatives",
-      "detailed_summary": "In scipy.signal.find_peaks_cwt wurde das SNR (Signal-Rausch-Verhältnis) fälschlicherweise am Ende jedes Ridges statt an dessen Maximum berechnet. Die Funktion `calculate_prc` verwendet max(cwt_data) entlang der Ridge, aber die Ridge-Werte repräsentieren die CWT-Koeffizienten, deren Betrag am Ridge-Maximum am größten ist - nicht zwangsweise am Ende. Der Fix: `snr = max(cwt_data[(r, c)])` statt `snr = cwt_data[(r, c)]`. Ein Einzeiler-Fix mit substanzieller Wirkung auf reale Signale.",
+      "detailed_summary": "In scipy.signal.find_peaks_cwt wurde das SNR (Signal-Rausch-Verh\u00e4ltnis) f\u00e4lschlicherweise am Ende jedes Ridges statt an dessen Maximum berechnet. Die Funktion `calculate_prc` verwendet max(cwt_data) entlang der Ridge, aber die Ridge-Werte repr\u00e4sentieren die CWT-Koeffizienten, deren Betrag am Ridge-Maximum am gr\u00f6\u00dften ist - nicht zwangsweise am Ende. Der Fix: `snr = max(cwt_data[(r, c)])` statt `snr = cwt_data[(r, c)]`. Ein Einzeiler-Fix mit substanzieller Wirkung auf reale Signale.",
       "skills_developed": [
         "Signal processing",
         "Continuous wavelet transform",
         "Ridge detection",
         "SciPy internals"
       ],
-      "blog_body": "## Ein Einzeiler, der echte Peaks rettet: find_peaks_cwt SNR Bug\n\n### Das Problem\n`scipy.signal.find_peaks_cwt` übersieht Peaks in verrauschten Signalen. Die Ursache: SNR wird am Ende jedes Ridges berechnet statt an dessen Maximum.\n\n### Die Mathematik\nCWT = Wavelet-Skalogramm über Frequenzbänder. Ein Ridge ist der Pfad maximaler Koeffizienten durch die Zeit-Frequenz-Ebene. Das SNR sollte dort gemessen werden, wo das Signal am stärksten ist - am Ridge-Maximum.\n\nDie fehlerhafte Zeile: `snr = cwt_data[(r, c)]` — nimmt den aktuellen Punkt (oft das Ende). Der Fix: `snr = max(cwt_data[(r, c)])` — nimmt das Maximum über alle bisherigen Punkte dieser Ridge.\n\n### Was ich gelernt habe\n1. CWT ist kein Blackbox: Ridge Detection, SNR-Messung, und wie sie zusammenhängen.\n2. Ein Einzeiler-Fix kann Monate altes Issue lösen.\n3. Die richtige SNR-Definition in CWT ist nicht trivial: Rauschschätzung über Median der unteren Wavelet-Skalen.\n4. Tests in scipy.signal sind robust — alle 6 CWT-Tests bestehen."
+      "blog_body": "## Ein Einzeiler, der echte Peaks rettet: find_peaks_cwt SNR Bug\n\n### Das Problem\n`scipy.signal.find_peaks_cwt` \u00fcbersieht Peaks in verrauschten Signalen. Die Ursache: SNR wird am Ende jedes Ridges berechnet statt an dessen Maximum.\n\n### Die Mathematik\nCWT = Wavelet-Skalogramm \u00fcber Frequenzb\u00e4nder. Ein Ridge ist der Pfad maximaler Koeffizienten durch die Zeit-Frequenz-Ebene. Das SNR sollte dort gemessen werden, wo das Signal am st\u00e4rksten ist - am Ridge-Maximum.\n\nDie fehlerhafte Zeile: `snr = cwt_data[(r, c)]` \u2014 nimmt den aktuellen Punkt (oft das Ende). Der Fix: `snr = max(cwt_data[(r, c)])` \u2014 nimmt das Maximum \u00fcber alle bisherigen Punkte dieser Ridge.\n\n### Was ich gelernt habe\n1. CWT ist kein Blackbox: Ridge Detection, SNR-Messung, und wie sie zusammenh\u00e4ngen.\n2. Ein Einzeiler-Fix kann Monate altes Issue l\u00f6sen.\n3. Die richtige SNR-Definition in CWT ist nicht trivial: Rauschsch\u00e4tzung \u00fcber Median der unteren Wavelet-Skalen.\n4. Tests in scipy.signal sind robust \u2014 alle 6 CWT-Tests bestehen.",
+      "status": "open",
+      "notes": "Open on GitHub. no comments"
     },
     {
       "date": "2026-04-26",
@@ -229,14 +245,16 @@
       ],
       "issue_url": "https://github.com/huggingface/trl/issues/5032",
       "learning_summary": "Gemma-3 models require explicit token_type_ids; GRPOTrainer didn't pass them, crashing during packed sequence RL training",
-      "detailed_summary": "Gemma-3 Modelle benötigen explizite token_type_ids (anders als Llama/GPT etc.), aber GRPOTrainer und PPOTrainer haben diese nicht an die generate()-Funktion übergeben. Bei gepackten Sequenzen (DataCollatorForCompletionOnlyLM) fehlen token_type_ids komplett, was zu einem ValueError führt. Fix in 5 Dateien: model-agnostisches Padding/Packing und token_type_ids-Übergabe in generate(), sowie korrekte Erzeugung in GRPOConfig und PPOConfig.",
+      "detailed_summary": "Gemma-3 Modelle ben\u00f6tigen explizite token_type_ids (anders als Llama/GPT etc.), aber GRPOTrainer und PPOTrainer haben diese nicht an die generate()-Funktion \u00fcbergeben. Bei gepackten Sequenzen (DataCollatorForCompletionOnlyLM) fehlen token_type_ids komplett, was zu einem ValueError f\u00fchrt. Fix in 5 Dateien: model-agnostisches Padding/Packing und token_type_ids-\u00dcbergabe in generate(), sowie korrekte Erzeugung in GRPOConfig und PPOConfig.",
       "skills_developed": [
         "RLHF training loops",
         "HuggingFace TRL internals",
         "Model-specific tokenization",
         "Packed sequence processing"
       ],
-      "blog_body": "## Gemma-3 und TRL: Warum token_type_ids RL-Training crashen lassen\n\n### Das Problem\n`trl.GRPOTrainer.train()` mit gemma-3 Basis-Modell -> ValueError: token_type_ids must be provided.\n\n### Die Ursache\nGemma-3 verwendet ein eigenes Attention-Masking-Schema, das token_type_ids benötigt. Die TRL-Trainer (GRPO + PPO) haben generate() ohne token_type_ids aufgerufen.\n\nBei gepackten Sequenzen (DataCollatorForCompletionOnlyLM) werden mehrere Samples in eine Sequenz gepackt. token_type_ids unterscheiden Prompt von Completion — ohne sie kann das Modell nicht unterscheiden.\n\n### Die Lösung\ntoken_type_ids in generate() übergeben + DataCollator-Padding anpassen. 25 Zeilen fix, 5 Dateien.\n\n### Was ich gelernt habe\n1. Jeder Model-Typ hat Eigenheiten. Gemma-3 ist kein Llama-Klon.\n2. TRL Trainer abstrahieren generate()-Calls mehrfach — der Bug lag in 3 Schichten.\n3. HuggingFace bot auto-closed first PR (fehlende AI-Declaration-Checkbox). Zweiter Versuch erfolgreich.\n4. Model-Agnostizität vs. Model-Spezifik: TRL will generisch sein, aber Modelle brauchen spezifische Handling."
+      "blog_body": "## Gemma-3 und TRL: Warum token_type_ids RL-Training crashen lassen\n\n### Das Problem\n`trl.GRPOTrainer.train()` mit gemma-3 Basis-Modell -> ValueError: token_type_ids must be provided.\n\n### Die Ursache\nGemma-3 verwendet ein eigenes Attention-Masking-Schema, das token_type_ids ben\u00f6tigt. Die TRL-Trainer (GRPO + PPO) haben generate() ohne token_type_ids aufgerufen.\n\nBei gepackten Sequenzen (DataCollatorForCompletionOnlyLM) werden mehrere Samples in eine Sequenz gepackt. token_type_ids unterscheiden Prompt von Completion \u2014 ohne sie kann das Modell nicht unterscheiden.\n\n### Die L\u00f6sung\ntoken_type_ids in generate() \u00fcbergeben + DataCollator-Padding anpassen. 25 Zeilen fix, 5 Dateien.\n\n### Was ich gelernt habe\n1. Jeder Model-Typ hat Eigenheiten. Gemma-3 ist kein Llama-Klon.\n2. TRL Trainer abstrahieren generate()-Calls mehrfach \u2014 der Bug lag in 3 Schichten.\n3. HuggingFace bot auto-closed first PR (fehlende AI-Declaration-Checkbox). Zweiter Versuch erfolgreich.\n4. Model-Agnostizit\u00e4t vs. Model-Spezifik: TRL will generisch sein, aber Modelle brauchen spezifische Handling.",
+      "status": "open",
+      "notes": "Open on GitHub. no comments"
     },
     {
       "date": "2026-04-26",
@@ -255,14 +273,16 @@
       ],
       "issue_url": "https://github.com/Nixtla/coreforecast/issues/130",
       "learning_summary": "Under PYTHONOPTIMIZE=2 (-OO), __doc__ is None, causing segfaults in rolling.py/expanding.py",
-      "detailed_summary": "Wenn Python mit -OO (PYTHONOPTIMIZE=2) läuft, werden Docstrings aus dem Bytecode entfernt — __doc__ ist None, nicht der übliche String. In coreforecasts rolling.py und expanding.py wurden __doc__-Strings fälschlicherweise als Bedingungen in control flow verwendet (if 'value' in __doc__: ...). Mit PYTHONOPTIMIZE=2 crasht 'value' in None -> TypeError -> Segfault in der C-Extension. Fix: Optionalen Docstring mit None-check sichern: if __doc__ and 'value' in __doc__.",
+      "detailed_summary": "Wenn Python mit -OO (PYTHONOPTIMIZE=2) l\u00e4uft, werden Docstrings aus dem Bytecode entfernt \u2014 __doc__ ist None, nicht der \u00fcbliche String. In coreforecasts rolling.py und expanding.py wurden __doc__-Strings f\u00e4lschlicherweise als Bedingungen in control flow verwendet (if 'value' in __doc__: ...). Mit PYTHONOPTIMIZE=2 crasht 'value' in None -> TypeError -> Segfault in der C-Extension. Fix: Optionalen Docstring mit None-check sichern: if __doc__ and 'value' in __doc__.",
       "skills_developed": [
         "Python runtime internals",
         "C-extension debugging",
         "Optimization levels",
         "Segfault analysis"
       ],
-      "blog_body": "## Wenn Python -OO dein Programm segfaulten lässt: coreforecast unter PYTHONOPTIMIZE=2\n\n### Das Problem\n`python -OO -c \"from coreforecast import *\"` -> Segmentation Fault.\n\n### Die Ursache\nPython's -OO flag entfernt Docstrings (__doc__ = None). In rolling.py und expanding.py wurde __doc__ direkt in Bedingungen verwendet:\n\n```python\nif 'value' in __doc__:\n    ...\n\n# Mit -OO wird daraus:\nif 'value' in None:  # TypeError!\n```\n\nDer TypeError wird von der C-Extension nicht korrekt abgefangen -> Segfault.\n\n### Die Lösung\n`if __doc__ and 'value' in __doc__:` — None-Check vor String-Operation.\n\n### Was ich gelernt habe\n1. PYTHONOPTIMIZE=2 ist aggressiver als erwartet: Es entfernt nicht nur assert, sondern auch Docstrings.\n2. Segfaults in Python kommen oft von C-Extensions, die Python-Exceptions nicht propagieren können.\n3. __doc__ als Bedingung zu verwenden ist praktisch, aber bricht unter -OO.\n4. Nixtlas coreforecast ist eine Cython/C-Extension — der Fix lag im Python-Wrapper, nicht im C-Code."
+      "blog_body": "## Wenn Python -OO dein Programm segfaulten l\u00e4sst: coreforecast unter PYTHONOPTIMIZE=2\n\n### Das Problem\n`python -OO -c \"from coreforecast import *\"` -> Segmentation Fault.\n\n### Die Ursache\nPython's -OO flag entfernt Docstrings (__doc__ = None). In rolling.py und expanding.py wurde __doc__ direkt in Bedingungen verwendet:\n\n```python\nif 'value' in __doc__:\n    ...\n\n# Mit -OO wird daraus:\nif 'value' in None:  # TypeError!\n```\n\nDer TypeError wird von der C-Extension nicht korrekt abgefangen -> Segfault.\n\n### Die L\u00f6sung\n`if __doc__ and 'value' in __doc__:` \u2014 None-Check vor String-Operation.\n\n### Was ich gelernt habe\n1. PYTHONOPTIMIZE=2 ist aggressiver als erwartet: Es entfernt nicht nur assert, sondern auch Docstrings.\n2. Segfaults in Python kommen oft von C-Extensions, die Python-Exceptions nicht propagieren k\u00f6nnen.\n3. __doc__ als Bedingung zu verwenden ist praktisch, aber bricht unter -OO.\n4. Nixtlas coreforecast ist eine Cython/C-Extension \u2014 der Fix lag im Python-Wrapper, nicht im C-Code.",
+      "status": "open",
+      "notes": "Open on GitHub. 1 comment(s)"
     }
   ]
 }
