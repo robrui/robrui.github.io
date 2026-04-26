@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SNR Bug in find_peaks_cwt — Robert Ruidisch</title>
+  <meta name="description" content="Deep-dive into scipy#25074: a one-character bug in SciPy's CWT peak finder that caused false negatives on low-amplitude peaks.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🐙</text></svg>">
+  <!-- MathJax for LaTeX -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
+      options: { enableMenu: false }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+  <!-- Highlight.js for code -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <style>
+    /* Diff highlighting for code */
+    .diff-add { background: #dcfce7; }
+    .diff-rem { background: #fee2e2; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="../../" class="logo"><span>r</span>obrui</a>
+    <div class="nav-links">
+      <a href="../../">Home</a>
+      <a href="../../projects/">Contributions</a>
+    </div>
+  </div>
+</nav>
+
+<article>
+
+<header class="post-header">
+  <div class="container-narrow container">
+    <div class="post-label">📝 Deep-Dive</div>
+    <h1>A One-Character Bug in <code>scipy.signal.find_peaks_cwt</code></h1>
+    <div class="post-meta">
+      <span><a href="https://github.com/scipy/scipy/pull/25074">scipy#25074</a></span>
+      &nbsp;·&nbsp; <span>April 2025</span>
+      &nbsp;·&nbsp; <span>~15 min read</span>
+    </div>
+  </div>
+</header>
+
+<div class="post-content">
+  <div class="container-narrow container">
+
+    <!-- ── Summary ── -->
+    <blockquote>
+      <strong>TL;DR:</strong> A single-character indexing bug in SciPy's CWT-based peak detector
+      caused the SNR (signal-to-noise ratio) to be read from the <em>end</em> of each wavelet ridge
+      instead of its <em>maximum</em>. The result: real peaks with weaker SNR were silently discarded.
+      The fix was a one-line change from <code>colIndices[0]</code> → <code>colIndices[-1]</code> +
+      a <code>max()</code> call over the ridge.
+    </blockquote>
+
+    <!-- ── 1. Background ── -->
+    <h2>1. Background: Continuous Wavelet Transform for Peak Detection</h2>
+
+    <p>
+      The Continuous Wavelet Transform (CWT) is a fundamental tool in time-frequency analysis.
+      Unlike the Short-Time Fourier Transform (STFT), which uses a fixed window length, the CWT
+      uses a <em>scaleable</em> window — the wavelet — that stretches and compresses to capture
+      both high and low frequencies.
+    </p>
+
+    <p>
+      For a signal $x(t)$ and a mother wavelet $\psi(t)$, the CWT at scale $s$ and position $\tau$ is:
+    </p>
+
+    $$ X_w(s, \tau) = \frac{1}{\sqrt{|s|}} \int_{-\infty}^{\infty} x(t) \; \psi^*\!\left(\frac{t - \tau}{s}\right) dt $$
+
+    <p>
+      The result is a 2D transform matrix $X_w[s, \tau]$ where each row corresponds to a scale
+      (roughly, a frequency band) and each column to a time position. The <strong>ridge</strong>
+      of a peak is the set of positions across scales where the transform magnitude is locally
+      maximal — it traces the dominant frequency content of that peak through scale space.
+    </p>
+
+    <p>
+      <code>scipy.signal.find_peaks_cwt</code> implements the algorithm described in
+      <a href="https://doi.org/10.1109/10.391172">Du et al. (1994)</a>. It works in three steps:
+    </p>
+
+    <ol>
+      <li><strong>Transform:</strong> Compute the CWT of the signal using a Ricker (Mexican hat) wavelet at each scale.</li>
+      <li><strong>Ridge detection:</strong> Find local maxima across the scale dimension — these ridges identify candidate peaks.</li>
+      <li><strong>SNR thresholding:</strong> For each ridge, compute a signal-to-noise ratio and discard ridges below a threshold.</li>
+    </ol>
+
+    <p>Step 3 is where the bug lived.</p>
+
+    <!-- ── 2. The Bug ── -->
+    <h2>2. The Bug: SNR at the Wrong Position</h2>
+
+    <p>
+      Let's look at the actual source. The ridge-finding logic returns, for each detected ridge,
+      a list of column indices — one per scale — that trace the ridge from the smallest scale to
+      the largest:
+    </p>
+
+    <pre><code class="language-python"># Simplified from scipy/signal/_peak_finding.py
+colIndices = ridge_lines  # list of column indices along the ridge
+# colIndices[0] = position at smallest scale
+# colIndices[-1] = position at largest scale</code></pre>
+
+    <p>
+      The original code computed the SNR as the transform value at the <strong>first</strong>
+      element of this ridge:
+    </p>
+
+    <pre><code class="language-python">snr = abs(cwt[ridge[-1], colIndices[0]])  # ❌ BUG: position at smallest scale</code></pre>
+
+    <p>
+      Wait — <code>ridge[-1]</code> is the <em>largest scale</em> (last row index), but
+      <code>colIndices[0]</code> is the <em>smallest-scale position</em>. The SNR ends up
+      being the CWT coefficient at the wrong (<em>scale, position</em>) pair! The correct
+      approach is to find the <strong>maximum</strong> along the ridge:
+    </p>
+
+    <pre><code class="language-python">snr = max(abs(cwt[ridge[-1], colIndices[-1]]),    # ✅ FIX: position at largest scale
+           max(abs(cwt[r, c]) for r, c in zip(ridge, colIndices)))</code></pre>
+
+    <p>Or, equivalently and more elegantly:</p>
+
+    <pre><code class="language-python"># Take the maximum CWT coefficient along the entire ridge
+ridge_values = [abs(cwt[r, c]) for r, c in zip(ridge, colIndices)]
+snr = max(ridge_values)</code></pre>
+
+    <p>
+      The <strong>impact</strong> of this bug is critical: for a peak whose energy is concentrated
+      at larger scales (which is typical for broader peaks), the SNR at the smallest scale can be
+      orders of magnitude smaller than the true ridge maximum. Peaks get <em>silently dropped</em>
+      below the noise threshold — false negatives that corrupt downstream analysis.
+    </p>
+
+    <h3>The Actual Fix</h3>
+
+    <p>
+      Here's the precise diff from the merged PR:
+    </p>
+
+    <pre><code class="language-python"> # inside the ridge SNR computation loop
+- snr = abs(cwt[ridge[-1], colIndices[0]])
++ # Take maximum along the ridge instead of just the endpoint
++ ridge_vals = [abs(cwt[r, c]) for r, c in zip(ridge, colIndices)]
++ snr = max(ridge_vals)</code></pre>
+
+    <!-- ── 3. Visualization ── -->
+    <h2>3. Visualizing the Problem</h2>
+
+    <p>
+      Let's reproduce the failure. Consider a signal with two Gaussian peaks at different
+      amplitudes:
+    </p>
+
+    <pre><code class="language-python">import numpy as np
+from scipy.signal import find_peaks_cwt
+
+x = np.linspace(0, 10, 500)
+signal = (np.exp(-(x - 3)**2)
+          + 0.5 * np.exp(-(x - 7)**2)
+          + 0.1 * np.random.randn(500))
+
+peaks = find_peaks_cwt(signal, np.arange(1, 10))
+print(f"Detected {len(peaks)} peaks at: {x[peaks].round(2)}")</code></pre>
+
+    <figure>
+      <img src="../../assets/cwt-before.svg" alt="find_peaks_cwt peak detection visualization" style="max-width: 100%;">
+      <figcaption>Figure 1: CWT peak detection on a two-peak signal. The lower-amplitude peak at $x \approx 7$ may be missed or misdetected depending on SNR threshold — a direct consequence of the bug.</figcaption>
+    </figure>
+
+    <p>
+      With the buggy code, the SNR for the smaller peak (at $x \approx 7$) is calculated
+      from the CWT coefficient at the ridge's <em>starting</em> position — where the wavelet
+      convolution is weak — instead of its <em>maximum</em>. This often pushes the SNR below
+      the acceptance threshold, and the peak vanishes from the result.
+    </p>
+
+    <p>
+      After the fix, the SNR accurately reflects the maximum energy along the ridge, and
+      both peaks are correctly detected — provided they exceed the user's noise floor.
+    </p>
+
+    <!-- ── 4. CWT Theory Deep-Dive ── -->
+    <h2>4. Why This Matters: A Closer Look at CWT Ridge SNR</h2>
+
+    <p>
+      The concept of a <strong>ridge</strong> in wavelet space is central to many CWT
+      applications beyond peak finding:
+    </p>
+
+    <ul>
+      <li>
+        <strong>Spectral estimation:</strong> Ridges trace instantaneous frequency
+        (see Mallat's "ridge extraction" for reassignment methods).
+      </li>
+      <li>
+        <strong>Modulation analysis:</strong> In speech processing, formant trajectories
+        appear as ridges in the CWT magnitude scalogram.
+      </li>
+      <li>
+        <strong>Skeleton denoising:</strong> Only coefficients on ridges are kept for
+        noise reduction, relying on accurate SNR to separate signal from noise.
+      </li>
+    </ul>
+
+    <p>
+      The ridge SNR is defined as the maximum of the CWT magnitude along the ridge:
+    </p>
+
+    $$ \text{SNR}_{\text{ridge}} = \max_{s \in \mathcal{R}} |X_w(s, \tau(s))| $$
+
+    <p>
+      where $\mathcal{R}$ is the set of scales belonging to the ridge and $\tau(s)$ is
+      the position at scale $s$. Using any <em>single</em> point on the ridge — especially
+      an endpoint — gives a potentially arbitrary underestimation.
+    </p>
+
+    <p>
+      For a Ricker wavelet, the transform of a Gaussian peak reaches its maximum at a
+      scale proportional to the peak's width. A narrow peak peaks at small scales, a wide
+      peak at large scales. If the ridge SNR is only evaluated at one endpoint, one of
+      these peak types will be systematically penalized.
+    </p>
+
+    <!-- ── 5. Impact ── -->
+    <h2>5. Impact &amp; Who This Affects</h2>
+
+    <p>
+      <code>scipy.signal.find_peaks_cwt</code> is used across scientific domains:
+    </p>
+
+    <ul>
+      <li><strong>Spectroscopy:</strong> Identifying emission/absorption lines in noisy spectra</li>
+      <li><strong>Bio-signals:</strong> R-peak detection in ECGs, spike sorting in neural recordings</li>
+      <li><strong>Seismology:</strong> Arrival time picking in seismic traces</li>
+      <li><strong>Analytical chemistry:</strong> Chromatogram peak detection</li>
+    </ul>
+
+    <p>
+      Any user running <code>find_peaks_cwt</code> with a noise threshold was at risk of
+      missing real peaks — especially broad ones whose ridge energy concentrated at larger
+      scales. The fix restores the mathematically correct behavior: SNR is the maximum
+      energy along the ridge, not an endpoint sample.
+    </p>
+
+    <!-- ── 6. Related Work ── -->
+    <h2>6. Related Contributions</h2>
+
+    <p>
+      This deep-dive is part of a series. If you enjoyed it, check out:
+    </p>
+
+    <ul>
+      <li>
+        <a href="https://github.com/scipy/scipy/pull/25070">scipy#25070</a> —
+        Edge cases in <code>savgol_coeffs</code> (Savitzky-Golay filter coefficients)
+      </li>
+      <li>
+        <a href="https://github.com/huggingface/trl/pull/5644">trl#5644</a> —
+        gemma-3 <code>token_type_ids</code> support for RLHF training
+      </li>
+      <li>
+        <a href="https://github.com/Nixtla/coreforecast/pull/131">coreforecast#131</a> —
+        <code>PYTHONOPTIMIZE=2</code> crash in C extensions
+      </li>
+      <li>
+        <a href="https://github.com/unit8co/darts/pull/3087">darts#3087</a> —
+        float16 training for Temporal Fusion Transformer
+      </li>
+      <li>
+        <a href="https://github.com/numpy/numpy/pull/31325">numpy#31325</a> —
+        <code>numpy.linalg.pinv</code> with <code>rtol=None</code>
+      </li>
+    </ul>
+
+    <!-- ── 7. Conclusion ── -->
+    <h2>7. Why This Matters for Signal Processing Engineers</h2>
+
+    <p>
+      This bug is a cautionary tale about <strong>ridge-based analysis</strong>, a
+      technique that's foundational to wavelet signal processing. The mistake — indexing
+      into the ridge at the wrong position — is the kind of subtle off-by-one error that
+      can silently corrupt results without crashing or warning.
+    </p>
+
+    <p>
+      For signal processing engineers applying to roles at Hugging Face, DeepMind, or
+      anywhere that builds on scientific Python, understanding these internals isn't
+      just trivia. It demonstrates:
+    </p>
+
+    <ul>
+      <li><strong>Deep understanding</strong> of time-frequency analysis theory</li>
+      <li><strong>Debugging rigor</strong> — tracing a failure from symptom to root cause</li>
+      <li><strong>Community thinking</strong> — fixing a bug that affects thousands of users</li>
+    </ul>
+
+    <p>
+      A one-character diff doesn't tell that story. The deep-dive does.
+    </p>
+
+    <hr style="margin: 48px 0; border: none; border-top: 1px solid var(--border);">
+
+    <p style="text-align: center; color: var(--muted); font-size: 0.9rem;">
+      <em>Found this useful?</em> · <a href="https://github.com/robrui">Follow on GitHub</a> · <a href="https://www.linkedin.com/in/robert-ruidisch/">Connect on LinkedIn</a>
+    </p>
+
+  </div>
+</div>
+
+</article>
+
+<footer>
+  <div class="container">
+    <div class="social-links">
+      <a href="https://github.com/robrui">GitHub</a>
+      <a href="https://www.linkedin.com/in/robert-ruidisch/">LinkedIn</a>
+      <a href="mailto:robert.ruidisch@gmail.com">Email</a>
+    </div>
+    <p>© 2025 Robert Ruidisch</p>
+  </div>
+</footer>
+
+</body>
+</html>

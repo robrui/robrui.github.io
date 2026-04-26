@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robert Ruidisch — Signal Processing ML Engineer</title>
+  <meta name="description" content="Portfolio of Robert Ruidisch — Signal Processing ML Engineer. Open-source contributions to NumPy, SciPy, Hugging Face TRL, and more.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🐙</text></svg>">
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="/" class="logo"><span>r</span>obrui</a>
+    <div class="nav-links">
+      <a href="/" class="active">Home</a>
+      <a href="projects/">Contributions</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <h1>Signal Processing <span>ML Engineer</span></h1>
+    <p class="subtitle">
+      Open-source contributor. Time series &amp; speech processing. Making scientific Python better for everyone.
+    </p>
+    <p class="tagline">
+      TU München MSc · <a href="projects/">6 deep-dives</a> into NumPy, SciPy, Hugging Face TRL, Unit8 darts &amp; more
+    </p>
+    <div class="btn-row">
+      <a href="projects/" class="btn btn-primary">Browse Deep-Dives →</a>
+      <a href="https://github.com/robrui" class="btn btn-outline">GitHub</a>
+      <a href="https://www.linkedin.com/in/robert-ruidisch/" class="btn btn-outline">LinkedIn</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Featured Contributions</h2>
+    <div class="card-grid card-grid-2">
+
+      <div class="card">
+        <h3><a href="posts/scipy-25074-find-peaks-cwt/">SNR Bug in <code>scipy.signal.find_peaks_cwt</code></a></h3>
+        <div class="meta">
+          <span>🔧 scipy#25074</span>
+          <span>📅 Apr 2025</span>
+        </div>
+        <p>
+          Found and fixed a bug in SciPy's CWT peak detector where SNR was computed at
+          the <em>end</em> of each ridge instead of its maximum — causing false negatives
+          on real-world signals.
+        </p>
+        <div class="card-tags">
+          <span class="tag">DSP</span>
+          <span class="tag">CWT</span>
+          <span class="tag">scipy</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><a href="https://github.com/huggingface/trl/pull/5644">gemma-3 <code>token_type_ids</code> Support in TRL</a></h3>
+        <div class="meta">
+          <span>🔧 trl#5644</span>
+          <span>📅 Mar 2025</span>
+        </div>
+        <p>
+          Added <code>token_type_ids</code> handling for gemma-3 in Hugging Face's TRL library,
+          fixing crashes during RL training with packed sequences.
+        </p>
+        <div class="card-tags">
+          <span class="tag tag-purple">RLHF</span>
+          <span class="tag tag-purple">transformers</span>
+          <span class="tag tag-purple">trl</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><a href="https://github.com/Nixtla/coreforecast/pull/131"><code>PYTHONOPTIMIZE=2</code> Crash in coreforecast</a></h3>
+        <div class="meta">
+          <span>🔧 coreforecast#131</span>
+          <span>📅 Feb 2025</span>
+        </div>
+        <p>
+          Diagnosed a segmentation fault in Nixtla's coreforecast when Python runs with
+          <code>-OO</code> (optimize level 2): <code>__debug__</code>-guarded <code>assert</code> statements
+          broke runtime control flow.
+        </p>
+        <div class="card-tags">
+          <span class="tag tag-orange">Python Internals</span>
+          <span class="tag tag-orange">C Extensions</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><a href="https://github.com/unit8co/darts/pull/3087">float16 Training for TFT Model in darts</a></h3>
+        <div class="meta">
+          <span>🔧 darts#3087</span>
+          <span>📅 Mar 2025</span>
+        </div>
+        <p>
+          Enabled mixed-precision (float16) training for the Temporal Fusion Transformer
+          in Unit8's darts library, delivering 2× throughput on compatible hardware.
+        </p>
+        <div class="card-tags">
+          <span class="tag tag-green">Time Series</span>
+          <span class="tag tag-green">Deep Learning</span>
+          <span class="tag tag-green">darts</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Why Deep-Dives?</h2>
+    <div style="max-width: 680px;">
+      <p>
+        Every open-source contribution tells a story. Behind every PR is a bug that
+        took hours to find, a subtle API contract that needed fixing, or a performance
+        optimization that required deep understanding of the underlying math.
+      </p>
+      <p style="margin-top: 12px;">
+        These deep-dives capture <strong>what</strong> changed, <strong>why</strong> it matters,
+        and <strong>how</strong> you'd find and fix it yourself — with theory, code, and
+        visualizations. Think of them as the "director's commentary" for my PRs.
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="social-links">
+      <a href="https://github.com/robrui">GitHub</a>
+      <a href="https://www.linkedin.com/in/robert-ruidisch/">LinkedIn</a>
+      <a href="mailto:robert.ruidisch@gmail.com">Email</a>
+    </div>
+    <p>© 2025 Robert Ruidisch · Built with ❤️ for open source</p>
+  </div>
+</footer>
+
+</body>
+</html>

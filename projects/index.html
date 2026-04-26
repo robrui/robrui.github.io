@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contributions — Robert Ruidisch</title>
+  <meta name="description" content="Deep-dives into open-source contributions by Robert Ruidisch.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🐙</text></svg>">
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="../" class="logo"><span>r</span>obrui</a>
+    <div class="nav-links">
+      <a href="../">Home</a>
+      <a href="./" class="active">Contributions</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero" style="padding-bottom: 32px;">
+  <div class="container-wide container">
+    <h1>Contribution <span>Deep-Dives</span></h1>
+    <p class="subtitle">
+      Every PR is a story. Here's the science behind the commits — from wavelet theory
+      to Python runtime internals.
+    </p>
+  </div>
+</section>
+
+<section class="section" style="padding-top: 0;">
+  <div class="container-wide container">
+    <div class="card-grid card-grid-2">
+
+      <!-- scipy#25074 -->
+      <div class="card">
+        <h3><a href="../posts/scipy-25074-find-peaks-cwt/">SNR Bug in <code>scipy.signal.find_peaks_cwt</code></a></h3>
+        <div class="meta">
+          <span>🔧 <a href="https://github.com/scipy/scipy/pull/25074" style="color:var(--accent);text-decoration:none;">scipy#25074</a></span>
+          <span>📅 Apr 2025</span>
+        </div>
+        <p>
+          A one-character bug in the SNR computation that caused the CWT peak finder
+          to miss low-amplitude peaks. Deep-dive into continuous wavelet transforms,
+          ridge detection, and spectral SNR.
+        </p>
+        <div class="card-tags">
+          <span class="tag">DSP</span>
+          <span class="tag">CWT</span>
+          <span class="tag">scipy</span>
+          <span class="tag tag-orange">bug</span>
+        </div>
+      </div>
+
+      <!-- trl#5644 -->
+      <div class="card">
+        <h3><a href="https://github.com/huggingface/trl/pull/5644">gemma-3 <code>token_type_ids</code> in TRL</a></h3>
+        <div class="meta">
+          <span>🔧 <a href="https://github.com/huggingface/trl/pull/5644" style="color:var(--accent);text-decoration:none;">trl#5644</a></span>
+          <span>📅 Mar 2025</span>
+        </div>
+        <p>
+          Added support for gemma-3's <code>token_type_ids</code> in Hugging Face's TRL
+          reinforcement learning library, fixing crashes during packed sequence
+          training.
+        </p>
+        <div class="card-tags">
+          <span class="tag tag-purple">RLHF</span>
+          <span class="tag tag-purple">transformers</span>
+          <span class="tag tag-purple">trl</span>
+        </div>
+      </div>
+
+      <!-- coreforecast#131 -->
+      <div class="card">
+        <h3><a href="https://github.com/Nixtla/coreforecast/pull/131"><code>PYTHONOPTIMIZE=2</code> Crash</a></h3>
+        <div class="meta">
+          <span>🔧 <a href="https://github.com/Nixtla/coreforecast/pull/131" style="color:var(--accent);text-decoration:none;">coreforecast#131</a></span>
+          <span>📅 Feb 2025</span>
+        </div>
+        <p>
+          Segmentation fault in Nixtla's coreforecast under Python <code>-OO</code>.
+          Root cause: <code>assert</code> statements gating control flow statements
+          disappeared under <code>__debug__ = False</code>.
+        </p>
+        <div class="card-tags">
+          <span class="tag tag-orange">Python Internals</span>
+          <span class="tag tag-orange">C Extensions</span>
+        </div>
+      </div>
+
+      <!-- darts#3087 -->
+      <div class="card">
+        <h3><a href="https://github.com/unit8co/darts/pull/3087">float16 TFT Training</a></h3>
+        <div class="meta">
+          <span>🔧 <a href="https://github.com/unit8co/darts/pull/3087" style="color:var(--accent);text-decoration:none;">darts#3087</a></span>
+          <span>📅 Mar 2025</span>
+        </div>
+        <p>
+          Mixed-precision (float16) training for the Temporal Fusion Transformer
+          in darts. Achieves ~2× throughput on NVIDIA GPUs with minimal accuracy
+          degradation.
+        </p>
+        <div class="card-tags">
+          <span class="tag tag-green">Time Series</span>
+          <span class="tag tag-green">Deep Learning</span>
+          <span class="tag tag-green">darts</span>
+        </div>
+      </div>
+
+      <!-- numpy#31325 -->
+      <div class="card">
+        <h3><a href="https://github.com/numpy/numpy/pull/31325">pinv with <code>rtol=None</code></a></h3>
+        <div class="meta">
+          <span>🔧 <a href="https://github.com/numpy/numpy/pull/31325" style="color:var(--accent);text-decoration:none;">numpy#31325</a></span>
+          <span>📅 Jan 2025</span>
+        </div>
+        <p>
+          Fixed <code>numpy.linalg.pinv</code> to properly handle <code>rtol=None</code>,
+          aligning behavior with the documented default tolerance computation
+          for the Moore-Penrose pseudo-inverse.
+        </p>
+        <div class="card-tags">
+          <span class="tag">Numerical Linear Algebra</span>
+          <span class="tag">numpy</span>
+        </div>
+      </div>
+
+      <!-- scipy#25070 -->
+      <div class="card">
+        <h3><a href="https://github.com/scipy/scipy/pull/25070">savgol_coeffs Edge Cases</a></h3>
+        <div class="meta">
+          <span>🔧 <a href="https://github.com/scipy/scipy/pull/25070" style="color:var(--accent);text-decoration:none;">scipy#25070</a></span>
+          <span>📅 Apr 2025</span>
+        </div>
+        <p>
+          Fixed edge-case behavior in <code>scipy.signal.savgol_coeffs</code> for
+          Savitzky-Golay filter coefficient computation with higher-order
+          polynomial fits.
+        </p>
+        <div class="card-tags">
+          <span class="tag">DSP</span>
+          <span class="tag">Savitzky-Golay</span>
+          <span class="tag">scipy</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="social-links">
+      <a href="https://github.com/robrui">GitHub</a>
+      <a href="https://www.linkedin.com/in/robert-ruidisch/">LinkedIn</a>
+      <a href="mailto:robert.ruidisch@gmail.com">Email</a>
+    </div>
+    <p>© 2025 Robert Ruidisch</p>
+  </div>
+</footer>
+
+</body>
+</html>
