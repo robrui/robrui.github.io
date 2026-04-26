@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Robert Ruidisch — Signal Processing ML Engineer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a0f;--bg2:#12121a;--bg3:#1a1a28;--bg4:#22223a;--text:#e8e8f0;--text2:#9999b0;--text3:#666680;--accent:#2563eb;--accent2:#1d4ed8;--accent-glow:rgba(37,99,235,0.15);--green:#22c55e;--purple:#a855f7;--red:#ef4444;--orange:#f59e0b;--radius:12px;--radius-sm:8px;--font:'Inter',system-ui,-apple-system,sans-serif;--mono:'JetBrains Mono',monospace}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-decoration:none;transition:color .2s}
+a:hover{color:#60a5fa}
+/* --- Hero --- */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:2rem;position:relative;overflow:hidden}
+.hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,var(--accent-glow) 0%,transparent 60%)}
+.hero-content{position:relative;z-index:1;max-width:720px}
+.hero-badge{display:inline-block;padding:.35rem 1rem;border:1px solid var(--accent);border-radius:999px;font-size:.8rem;color:var(--accent);margin-bottom:1.5rem;letter-spacing:.5px;text-transform:uppercase;font-weight:500;background:rgba(37,99,235,.08)}
+.hero h1{font-size:clamp(2.5rem,6vw,4.5rem);font-weight:800;letter-spacing:-.03em;line-height:1.1;margin-bottom:.5rem;background:linear-gradient(135deg,#fff 0%,var(--accent) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero h2{font-size:clamp(1rem,2vw,1.3rem);font-weight:400;color:var(--text2);margin-bottom:1.5rem}
+.hero-info{display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center;margin-bottom:2rem;font-size:.9rem}
+.hero-info span{padding:.4rem 1rem;background:var(--bg3);border-radius:var(--radius-sm);color:var(--text2);display:flex;align-items:center;gap:.5rem}
+.hero-info svg{width:16px;height:16px;flex-shrink:0}
+.hero-stats{display:flex;gap:2rem;margin-top:1rem;flex-wrap:wrap;justify-content:center}
+.stat{text-align:center}
+.stat-num{font-size:2rem;font-weight:700;color:var(--accent);line-height:1}
+.stat-label{font-size:.8rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:.3rem}
+.scroll-indicator{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);animation:bounce 2s infinite;color:var(--text3);cursor:pointer}
+@keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
+/* --- Sections --- */
+.section{padding:5rem 1.5rem;max-width:1100px;margin:0 auto}
+.section-label{display:inline-block;font-size:.8rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);font-weight:600;margin-bottom:.5rem}
+.section-title{font-size:clamp(1.5rem,3vw,2.5rem);font-weight:700;margin-bottom:.75rem;letter-spacing:-.02em}
+.section-subtitle{color:var(--text2);max-width:600px;margin-bottom:3rem;font-size:1.05rem}
+/* --- Timeline / Learning Curve --- */
+.curve-section{position:relative}
+.curve-container{position:relative;padding:2rem 0;max-width:900px;margin:0 auto}
+.curve-svg{width:100%;height:auto;display:block}
+.curve-point{cursor:pointer;transition:transform .3s,opacity .3s}
+.curve-point:hover{transform:scale(1.5)}
+.curve-point.active{filter:drop-shadow(0 0 8px var(--accent))}
+.curve-label{font-size:.7rem;fill:var(--text3);font-family:var(--font);transition:fill .3s,font-weight .3s}
+.curve-label.active{fill:var(--accent);font-weight:600}
+.curve-difficulty-labels{display:flex;justify-content:space-between;padding:0 1rem;margin-top:-.5rem;font-size:.8rem;color:var(--text3)}
+.curve-difficulty-labels span:nth-child(2){color:var(--accent);font-weight:600}
+.curve-milestones{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:2rem;justify-content:center}
+.milestone{background:var(--bg3);border-radius:var(--radius-sm);padding:.4rem .8rem;font-size:.8rem;color:var(--text2);border-left:3px solid var(--accent);cursor:pointer;transition:all .3s;opacity:.6}
+.milestone:hover,.milestone.active{opacity:1;background:var(--bg4);color:var(--text)}
+/* --- Contribution Cards --- */
+.cards-grid{display:grid;grid-template-columns:1fr;gap:1.5rem}
+@media(min-width:768px){.cards-grid{grid-template-columns:1fr 1fr}}
+.card{background:var(--bg2);border:1px solid var(--bg3);border-radius:var(--radius);padding:1.5rem;transition:transform .2s,box-shadow .2s,border-color .2s}
+.card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,.3);border-color:var(--accent)}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;gap:.5rem;flex-wrap:wrap}
+.card-title{font-size:1rem;font-weight:600;line-height:1.4;flex:1}
+.card-title a{color:var(--text)}
+.card-title a:hover{color:var(--accent)}
+.card-meta{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.8rem;align-items:center}
+.badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:999px;font-size:.7rem;font-weight:500;white-space:nowrap;font-family:var(--font)}
+.badge-repo{background:var(--bg4);color:var(--text2)}
+.badge-category{background:rgba(37,99,235,.15);color:var(--accent)}
+.badge-difficulty{padding:.15rem .5rem;border-radius:999px;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.diff-beginner{background:rgba(34,197,94,.15);color:var(--green)}
+.diff-intermediate{background:rgba(245,158,11,.15);color:var(--orange)}
+.diff-advanced{background:rgba(168,85,247,.15);color:var(--purple)}
+.badge-status{padding:.25rem .65rem;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.status-open{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.status-merged{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)}
+.status-closed{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.status-loading{background:var(--bg4);color:var(--text3);border:1px solid var(--bg4)}
+.tags{display:flex;flex-wrap:wrap;gap:.3rem;margin:.8rem 0}
+.tag{padding:.15rem .5rem;background:var(--bg3);border-radius:4px;font-size:.65rem;color:var(--text3);font-family:var(--mono)}
+.learning-box{background:var(--bg3);border-radius:var(--radius-sm);padding:.8rem 1rem;margin:.8rem 0;border-left:3px solid var(--accent);font-size:.9rem;color:var(--text2);line-height:1.5}
+.learning-box strong{color:var(--text)}
+.blog-toggle{background:none;border:1px solid var(--bg4);color:var(--accent);padding:.4rem 1rem;border-radius:var(--radius-sm);cursor:pointer;font-size:.8rem;font-family:var(--font);transition:all .2s;display:inline-flex;align-items:center;gap:.4rem}
+.blog-toggle:hover{background:var(--bg3);border-color:var(--accent)}
+.blog-content{display:none;margin-top:1rem;padding-top:1rem;border-top:1px solid var(--bg3);font-size:.9rem;line-height:1.7;color:var(--text2)}
+.blog-content.open{display:block}
+.blog-content h1,.blog-content h2,.blog-content h3,.blog-content h4{margin:1.5rem 0 .6rem;color:var(--text);font-weight:600}
+.blog-content h2{font-size:1.15rem}
+.blog-content h3{font-size:1rem}
+.blog-content p{margin-bottom:.8rem}
+.blog-content code{background:var(--bg3);padding:.15rem .4rem;border-radius:4px;font-family:var(--mono);font-size:.8em;color:var(--accent)}
+.blog-content pre{background:var(--bg3);padding:1rem;border-radius:var(--radius-sm);overflow-x:auto;margin:.8rem 0;font-size:.8rem;line-height:1.5;font-family:var(--mono);border:1px solid var(--bg4)}
+.blog-content pre code{background:none;padding:0;color:var(--text2)}
+.blog-content ul,.blog-content ol{padding-left:1.5rem;margin:.5rem 0}
+.blog-content li{margin-bottom:.3rem}
+.blog-content strong{color:var(--text)}
+.blog-content hr{margin:1.5rem 0;border:none;border-top:1px solid var(--bg3)}
+.card-links{display:flex;gap:1rem;margin-top:.8rem;font-size:.8rem}
+.card-links a{display:flex;align-items:center;gap:.3rem}
+/* --- Skills Radar --- */
+.radar-wrapper{display:flex;flex-direction:column;align-items:center;gap:2rem}
+@media(min-width:768px){.radar-wrapper{flex-direction:row;align-items:flex-start}}
+.radar-canvas-wrap{position:relative;width:100%;max-width:400px;aspect-ratio:1;flex-shrink:0}
+#skillsRadar{width:100%;height:100%;display:block}
+.radar-legend{flex:1;min-width:200px}
+.radar-legend-item{display:flex;align-items:center;gap:.5rem;padding:.3rem 0;font-size:.85rem;color:var(--text2)}
+.radar-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.radar-legend-label{flex:1}
+.radar-legend-count{font-size:.75rem;color:var(--text3);font-family:var(--mono)}
+/* --- Footer --- */
+.footer{background:var(--bg2);border-top:1px solid var(--bg3);padding:3rem 1.5rem;text-align:center}
+.footer-links{display:flex;justify-content:center;gap:2rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.footer-links a{display:flex;align-items:center;gap:.5rem;color:var(--text2);font-size:.9rem;transition:color .2s}
+.footer-links a:hover{color:var(--accent)}
+.footer-links svg{width:20px;height:20px}
+.footer-copy{font-size:.8rem;color:var(--text3)}
+/* --- Section divider --- */
+.section-divider{width:80px;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);margin:0 auto 2rem}
+/* --- Back to top --- */
+.back-top{position:fixed;bottom:2rem;right:2rem;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;display:none;align-items:center;justify-content:center;font-size:1.2rem;z-index:100;transition:all .3s;box-shadow:0 4px 15px rgba(37,99,235,.3)}
+.back-top.visible{display:flex}
+.back-top:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(37,99,235,.4)}
+/* --- Contribution details panel --- */
+.detail-panel{position:fixed;top:0;right:-480px;width:100%;max-width:480px;height:100vh;background:var(--bg2);border-left:1px solid var(--bg3);z-index:200;overflow-y:auto;transition:right .4s cubic-bezier(.4,0,.2,1);padding:2rem}
+.detail-panel.open{right:0}
+.detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:199;display:none}
+.detail-overlay.open{display:block}
+.detail-close{position:absolute;top:1rem;right:1rem;background:var(--bg3);border:none;color:var(--text2);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1.2rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.detail-close:hover{background:var(--bg4);color:var(--text)}
+.detail-panel h3{font-size:1.1rem;margin-bottom:.5rem;padding-right:2rem}
+/* --- Animations --- */
+.fade-in{opacity:0;transform:translateY(20px);transition:opacity .6s,transform .6s}
+.fade-in.visible{opacity:1;transform:translateY(0)}
+/* --- Responsive --- */
+@media(max-width:480px){
+  .hero-stats{gap:1.2rem}
+  .card{padding:1rem}
+  .curve-difficulty-labels{font-size:.65rem}
+  .detail-panel{padding:1.5rem;max-width:100%}
+}
+/* --- Loading skeleton --- */
+.skeleton{display:inline-block;width:4rem;height:1rem;background:var(--bg3);border-radius:4px;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-content">
+    <div class="hero-badge">Open Source Engineer</div>
+    <h1>Robert Ruidisch</h1>
+    <h2>Signal Processing &amp; Machine Learning Engineer</h2>
+    <div class="hero-info">
+      <span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        TU München — M.Sc. Electrical Engineering
+      </span>
+      <span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Thesis: RL + Transformer Models
+      </span>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num">10</div><div class="stat-label">Contributions</div></div>
+      <div class="stat"><div class="stat-num">7</div><div class="stat-label">Repos</div></div>
+      <div class="stat"><div class="stat-num">6</div><div class="stat-label">Libraries</div></div>
+    </div>
+  </div>
+  <div class="scroll-indicator" onclick="document.getElementById('curve').scrollIntoView({behavior:'smooth'})">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"/></svg>
+  </div>
+</section>
+
+<!-- Learning Curve -->
+<section class="section curve-section" id="curve">
+  <div style="text-align:center;margin-bottom:1rem">
+    <div class="section-label">📈 Learning Curve</div>
+    <h2 class="section-title">From Beginner to Advanced</h2>
+    <p class="section-subtitle" style="margin:0 auto 2rem">Each contribution represents a step upward in complexity and depth — from fixing Python imports to designing RL loss functions.</p>
+  </div>
+  <div class="curve-container" id="curveContainer">
+    <svg class="curve-svg" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet" id="curveSvg"></svg>
+    <div class="curve-difficulty-labels">
+      <span>🔰 Beginner</span>
+      <span>📈 Intermediate</span>
+      <span>🚀 Advanced</span>
+    </div>
+    <div class="curve-milestones" id="curveMilestones"></div>
+  </div>
+</section>
+
+<!-- Contributions -->
+<section class="section" id="contributions">
+  <div style="text-align:center;margin-bottom:1rem">
+    <div class="section-label">📦 Contributions</div>
+    <h2 class="section-title">Pull Requests &amp; Fixes</h2>
+    <p class="section-subtitle" style="margin:0 auto 3rem">Real issues in real open-source projects — from SciPy to Hugging Face — with detailed postmortems.</p>
+  </div>
+  <div class="cards-grid" id="cardsGrid"></div>
+</section>
+
+<!-- Skills Radar -->
+<section class="section" id="skills">
+  <div style="text-align:center;margin-bottom:1rem">
+    <div class="section-label">🧠 Skills</div>
+    <h2 class="section-title">Developed Through Contributions</h2>
+    <p class="section-subtitle" style="margin:0 auto 2rem">Core competencies strengthened across all pull requests.</p>
+  </div>
+  <div class="radar-wrapper">
+    <div class="radar-canvas-wrap"><canvas id="skillsRadar"></canvas></div>
+    <div class="radar-legend" id="radarLegend"></div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer" id="footer">
+  <div class="footer-links">
+    <a href="https://github.com/robrui" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61-.546-1.385-1.335-1.755-1.335-1.755-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.604-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 21.795 24 17.295 24 12 24 5.37 18.63 0 12 0"/></svg>
+      GitHub
+    </a>
+    <a href="https://www.linkedin.com/in/robertruidisch/" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.06 2.06 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+      LinkedIn
+    </a>
+    <a href="mailto:robert.ruidisch@gmail.com">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      Email
+    </a>
+  </div>
+  <div class="footer-copy">© 2026 Robert Ruidisch. Built with ❤️ for open source.</div>
+</footer>
+
+<!-- Detail Panel -->
+<div class="detail-overlay" id="detailOverlay"></div>
+<div class="detail-panel" id="detailPanel">
+  <button class="detail-close" onclick="closeDetail()">✕</button>
+  <div id="detailContent"></div>
+</div>
+
+<!-- Back to top -->
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+// ─── Data ───────────────────────────────────────
+const CONTRIBUTIONS = [
+  {
+    "date":"2026-04-25","repo":"scipy/scipy","pr_number":25071,
+    "pr_url":"https://github.com/scipy/scipy/pull/25071",
+    "title":"BUG: signal.sawtooth: fix NaN output for width=1 due to floating-point modulo",
+    "category":"scipy-signal","difficulty":"intermediate",
+    "tags":["scipy","signal-processing","sawtooth","floating-point","edge-cases"],
+    "issue_url":"https://github.com/scipy/scipy/issues/22940",
+    "learning_summary":"Floating-point modulo can produce exactly 2*pi, causing sawtooth(width=1) to divide by zero in the falling-ramp formula",
+    "skills_developed":["Signal processing","Floating-point arithmetic","SciPy internals","Array API compatibility"],
+    "blog_body":"## Wenn sawtooth(width=1) NaN produziert: Ein Floating-Point-Bug in SciPy\n\n### Das Problem\n`scipy.signal.sawtooth(-1e-16, width=1)` gibt NaN zur\u00fcck. Die Funktion sollte einen simplen S\u00e4geszahn von -1 bis 1 produzieren, aber stattdessen crasht die Berechnung.\n\n### Die Ursache\nDie S\u00e4geszahn-Funktion teilt das Intervall [0, 2*pi) in zwei Bereiche: eine steigende Rampe (0 bis width*2*pi) und eine fallende Rampe (width*2*pi bis 2*pi). Bei width=1 soll die steigende Rampe das gesamte Intervall abdecken.\n\nDer Bug liegt in der IEEE 754-Arithmetik: `(-1e-16) % (2*pi)` = `2*pi - 1e-16`. Aber 1e-16 ist so klein (unter der H\u00e4lfte des ULP von 2*pi, der ~8.9e-16 betr\u00e4gt), dass das Ergebnis auf exakt **2*pi** gerundet wird. Der Vergleich `tmod < 2*pi` wird False, der Wert f\u00e4llt in den fallenden Bereich - und dort wird durch `(1 - width) = 0` geteilt, was NaN ergibt.\n\n### Die L\u00f6sung\nStatt zu versuchen, den Vergleichstoleranz zu justieren (was andere Edge Cases aufrei\u00dft), werden width \u2248 1 und width \u2248 0 als Spezialf\u00e4lle behandelt. Wenn width effektiv 1 ist, wird direkt die steigende Rampe f\u00fcr alle Punkte angewendet. Bei width=0 entsprechend die fallende Rampe. Die Toleranz von 1e-15 ist weit unter jeder praktisch relevanten Abweichung von 0 oder 1.\n\n### Was ich gelernt habe\n1. **Floating Point ist nicht trivial**: Modulo-Operationen mit transzendenten Konstanten (pi) sind pr\u00e4zise genug f\u00fcr die meisten F\u00e4lle, aber nicht f\u00fcr alle. 1e-16 liegt unter der Maschinengenauigkeit von 64-bit Floats bei diesen Gr\u00f6\u00dfenordnungen.\n2. **Indirekte Division-by-Zero**: Der Bug wurde nicht durch eine offensichtliche Division durch Null verursacht, sondern durch die Kombination von FP-Rundung und einer strikten `<`-Vergleichsoperation.\n3. **API-Kompatibilit\u00e4t**: SciPy Pythran-Unterst\u00fctzung und der Array-API-Layer (xp, xpx) m\u00fcssen beachtet werden. Der Fix muss mit numpy, cupy und anderen Backends funktionieren.\n4. **Tests schlagen keine falsch positiven**: Die existierenden Tests haben den Bug nicht gefangen, weil sie mit `sawtooth(2*pi)` getestet haben (wo `2*pi % (2*pi) = 0`, was korrekt funktioniert), aber nicht mit negativen Werten dicht unter Null."
+  },
+  {
+    "date":"2026-04-25","repo":"numpy/numpy","pr_number":31327,
+    "pr_url":"https://github.com/numpy/numpy/pull/31327",
+    "title":"BUG: np.interp([], [], []) returns empty array instead of raising ValueError",
+    "category":"numpy-array","difficulty":"beginner",
+    "tags":["numpy","interpolation","empty-arrays","edge-cases"],
+    "issue_url":"https://github.com/numpy/numpy/issues/30316",
+    "learning_summary":"np.interp with all-empty arguments should return an empty array rather than crashing",
+    "skills_developed":["Numpy internals","C-Python interaction","Empty array edge cases","Interpolation theory"],
+    "blog_body":"## Wenn np.interp mit leeren Arrays crasht: Ein simpler Fix mit Tiefgang\n\n### Das Problem\n`np.interp([], [], [])` -> ValueError: 'array of sample points is empty'. Aber wenn x leer ist, gibt es nichts zu interpolieren - das Ergebnis ist trivial ein leeres Array.\n\n### Die Ursache\nDie C-Implementierung `arr_interp` in `compiled_base.c` pr\u00fcft `if (lenxp == 0)` und wirft einen Fehler. Das ist korrekt f\u00fcr nicht-leeres x (man kann nicht interpolieren ohne Samples), aber \u00fcbersieht den Fall x=0.\n\n### Warum es Jahre unentdeckt blieb\nWeil `np.interp([], [1, 2], [3, 4])` bereits funktioniert! Der C-Code verarbeitet leeres x korrekt, wenn xp/fp nicht leer sind. Nur der Fall \"alle drei leer\" hat den Bug getriggert. Drei verschiedene PR-Versuche (alle geschlossen) zeigen: der Fix ist nicht trivial, obwohl er klein ist.\n\n### Die L\u00f6sung\nFr\u00fcher Return im Python-Wrapper: Wenn `x.size == 0`, gib ein leeres Array mit korrektem Dtype zur\u00fcck (float64 oder complex128). Minimaler, backward-kompatibler Fix in 2 Dateien.\n\n### Was ich gelernt habe\n1. np.interp delegiert an C-Code (compiled_interp) - der Bug war tief im C-Code versteckt.\n2. Der Python-Wrapper in _function_base_impl.py war der richtige Ort f\u00fcr den Fix, nicht der C-Code.\n3. Vier unabh\u00e4ngige Leute haben das gleiche Issue gefixt (30334, 30451, 30794 - alle geschlossen), aber keiner hat durchgehalten. Beharrlichkeit zahlt.\n4. Ein fix der nur 3 Zeilen \u00e4ndert kann 4 PR-Versuche und Monate brauchen um akzeptiert zu werden."
+  },
+  {
+    "date":"2026-04-24","repo":"OpenPipe/ART","pr_number":660,
+    "pr_url":"https://github.com/OpenPipe/ART/pull/660",
+    "title":"Fix RULER function/module name collision in rewards/__init__.py",
+    "category":"python-imports","difficulty":"beginner",
+    "tags":["python","imports","module-resolution","rtd"],
+    "issue_url":"https://github.com/OpenPipe/ART/issues/339",
+    "learning_summary":"Python module resolution with sys.path and how __init__.py shadowing can break cross-module imports",
+    "skills_developed":["Python import system","Module resolution debugging","__init__.py patterns"],
+    "blog_body":"## Python Import Fallstricke: Wenn eine Funktion dein Modul verdeckt\n\n### Das Problem\nIn OpenPipe/ART existiert ein Modul `art.rewards.ruler` und eine gleichnamige Export-Funktion in der `__init__.py`. Beim Import landet zuerst die Funktion im Namespace, dann schl\u00e4gt der Submodul-Import fehl weil Python die Funktion statt des Moduls findet.\n\n### Die L\u00f6sung\nAlias-Import: `from . import ruler as _ruler_module` vermeidet die Kollision.\n\n### Was ich gelernt habe\nPython's Import-System ist nicht magisch - es sucht Namen in Namespaces. Ein sauberer `__init__.py` muss Name-Kollisionen zwischen Export-Funktionen und Submodulen vermeiden."
+  },
+  {
+    "date":"2026-04-24","repo":"huggingface/trl","pr_number":5640,
+    "pr_url":"https://github.com/huggingface/trl/pull/5640",
+    "title":"Fix spurious KL gradients for zero-std reward groups in GRPOTrainer",
+    "category":"rl-loss-design","difficulty":"advanced",
+    "tags":["reinforcement-learning","grpo","kl-divergence","loss-functions"],
+    "issue_url":"https://github.com/huggingface/trl/issues/5588",
+    "learning_summary":"GRPO KL penalty produces noise gradients when all responses in a group have identical rewards",
+    "skills_developed":["RL loss design","Gradient analysis","GRPO algorithm","Numerical stability"],
+    "blog_body":"## Wenn KL-Divergenz dein Training sabotiert: Spurious Gradients in GRPO\n\n### Das Problem\nGRPO normalisiert Rewards: `advantages = (r - mean(r)) / std(r)`. Wenn alle Antworten identische Rewards bekommen, ist std(r)=0.\n\nEin epsilon-Clip `std = max(std, 1e-4)` verhindert NaN, aber produziert Spurious Gradients: Der KL-Penalty propagiert weiter, obwohl das Reward-Signal keine Information enth\u00e4lt.\n\n### Die L\u00f6sung\nKL-Gradients maskieren wenn std(r) effektiv Null ist: `kl_loss = kl_loss * 0.0` detacht.\n\n### Was ich gelernt habe\nRL-Training mit KL-Penalty ist ein Balanceakt. Wenn das Reward-Signal ausf\u00e4llt, darf der KL-Term nicht allein weiterlernen - er produziert dann Rauschen statt sinnvoller Updates."
+  },
+  {
+    "date":"2026-04-24","repo":"scipy/scipy","pr_number":25070,
+    "pr_url":"https://github.com/scipy/scipy/pull/25070",
+    "title":"BUG: signal.savgol_filter raises error for even window_length",
+    "category":"scipy-signal","difficulty":"intermediate",
+    "tags":["signal-processing","savitzky-golay","filter-design","edge-cases"],
+    "issue_url":"https://github.com/scipy/scipy/issues/24512",
+    "learning_summary":"Savitzky-Golay filter with even window lengths silently produces incorrect results due to half-integer coefficient positions",
+    "skills_developed":["Signal processing","Filter theory","Numerical stability","API design"],
+    "blog_body":"## Wenn dein Signal-Filter stumm falsch rechnet: Savitzky-Golay mit geraden Fenstern\n\n### Das Problem\n`savgol_filter(data, 4, 2)` gibt eine Ausgabe ohne Fehler - aber das Ergebnis ist falsch. Bis zu 17 Fehler bei quadratischen Signalen.\n\n### Die Ursache\nSG-Filter fittet ein Polynom und wertet am Mittelpunkt aus. Bei Fenster 4 gibt es keinen echten Mittelpunkt - die Koeffizienten sind f\u00fcr Position 1.5 (zwischen Index 1 und 2). `convolve1d` zentriert aber bei einer ganzen Zahl.\n\n### Die L\u00f6sung\n`ValueError` f\u00fcr gerade Fenster in `savgol_filter()`. Fortgeschrittene k\u00f6nnen `savgol_coeffs()` mit explizitem `pos` nutzen.\n\n### Was ich gelernt habe\nManchmal ist der beste Fix, fr\u00fch zu scheitern statt stumm falsch zu rechnen."
+  },
+  {
+    "date":"2026-04-24","repo":"numpy/numpy","pr_number":31325,
+    "pr_url":"https://github.com/numpy/numpy/pull/31325",
+    "title":"BUG: Fix pinv crash with rtol=None on integer dtype arrays",
+    "category":"numpy-linalg","difficulty":"beginner",
+    "tags":["numpy","linear-algebra","type-handling","pinv"],
+    "issue_url":"https://github.com/numpy/numpy/pull/31325",
+    "learning_summary":"numpy.linalg.pinv crashes with TypeError when rtol=None and input is integer dtype",
+    "skills_developed":["Numpy internals","Linear algebra","Error handling patterns"],
+    "blog_body":"## numpy.linalg.pinv TypeError: Wenn finfo auf Integer trifft\n\n### Das Problem\n`np.linalg.pinv(int_array, rtol=None)` -> TypeError. finfo() unterst\u00fctzt nur Float-Typen.\n\n### Die Ursache\n`pinv` mit `rtol=None` berechnet `rtol = max(rows, cols) * finfo(dtype).eps`. Aber Integer haben keinen eps-Wert.\n\n### Die L\u00f6sung\nFloat-Konvertierung vor finfo: Pr\u00fcfen ob dtype ein Float ist, sonst zu float64 konvertieren.\n\n### Was ich gelernt habe\nNumpy unterscheidet strikt zwischen Integer und Float. Viele Algorithmen brauchen float-Eigenschaften wie eps - ohne explizite Konvertierung crasht der Code."
+  },
+  {
+    "date":"2026-04-24","repo":"numpy/numpy","pr_number":31326,
+    "pr_url":"https://github.com/numpy/numpy/pull/31326",
+    "title":"BUG: random.Generator.choice ignores shuffle=False when p is provided",
+    "category":"numpy-random","difficulty":"intermediate",
+    "tags":["numpy","random","sampling","non-uniform"],
+    "issue_url":"https://github.com/numpy/numpy/issues/31210",
+    "learning_summary":"numpy.random.choice with shuffle=False was silently ignored when non-uniform probabilities were provided",
+    "skills_developed":["Numpy internals","Random sampling","API contract analysis"],
+    "blog_body":"## numpy.random.choice: Wenn shuffle=False nicht das tut was es sagt\n\n### Das Problem\n`rng.choice(4, 4, replace=False, shuffle=False, p=[...])` -> Ergebnis ist geshuffelt.\n\n### Die Ursache\nDer nicht-uniforme Sampling-Pfad hatte keinen check f\u00fcr den shuffle-Parameter. Immer geshuffelt.\n\n### Die L\u00f6sung\n`if shuffle: _shuffle_int(...)` - einfache Bedingung, \u00fcbersehener Spezialfall.\n\n### Was ich gelernt habe\n300 Zeilen Cython schwer zu debuggen. Viele Code-Pfade, viele Edge Cases. Ein guter Test f\u00fcr shuffle=False mit nicht-uniformen Wahrscheinlichkeiten h\u00e4tte das sofort gefunden."
+  },
+  {
+    "date":"2026-04-26","repo":"scipy/scipy","pr_number":25074,
+    "pr_url":"https://github.com/scipy/scipy/pull/25074",
+    "title":"BUG: find_peaks_cwt SNR computed at end of ridge instead of maximum",
+    "category":"scipy-signal","difficulty":"advanced",
+    "tags":["scipy","signal-processing","cwt","peak-detection","snr"],
+    "issue_url":"https://github.com/scipy/scipy/issues/23604",
+    "learning_summary":"CWT peak detection bug: SNR computed at the end of each ridge instead of ridge maximum, causing false negatives",
+    "skills_developed":["Signal processing","Continuous wavelet transform","Ridge detection","SciPy internals"],
+    "blog_body":"## Ein Einzeiler, der echte Peaks rettet: find_peaks_cwt SNR Bug\n\n### Das Problem\n`scipy.signal.find_peaks_cwt` \u00fcbersieht Peaks in verrauschten Signalen. Die Ursache: SNR wird am Ende jedes Ridges berechnet statt an dessen Maximum.\n\n### Die Mathematik\nCWT = Wavelet-Skalogramm \u00fcber Frequenzb\u00e4nder. Ein Ridge ist der Pfad maximaler Koeffizienten durch die Zeit-Frequenz-Ebene. Das SNR sollte dort gemessen werden, wo das Signal am st\u00e4rksten ist - am Ridge-Maximum.\n\nDie fehlerhafte Zeile: `snr = cwt_data[(r, c)]` \u2014 nimmt den aktuellen Punkt (oft das Ende). Der Fix: `snr = max(cwt_data[(r, c)])` \u2014 nimmt das Maximum \u00fcber alle bisherigen Punkte dieser Ridge.\n\n### Was ich gelernt habe\n1. CWT ist kein Blackbox: Ridge Detection, SNR-Messung, und wie sie zusammenh\u00e4ngen.\n2. Ein Einzeiler-Fix kann Monate altes Issue l\u00f6sen.\n3. Die richtige SNR-Definition in CWT ist nicht trivial: Rauschsch\u00e4tzung \u00fcber Median der unteren Wavelet-Skalen.\n4. Tests in scipy.signal sind robust \u2014 alle 6 CWT-Tests bestehen."
+  },
+  {
+    "date":"2026-04-26","repo":"huggingface/trl","pr_number":5644,
+    "pr_url":"https://github.com/huggingface/trl/pull/5644",
+    "title":"Fix token_type_ids requirement for gemma-3 models in GRPOTrainer",
+    "category":"rl-training","difficulty":"intermediate",
+    "tags":["reinforcement-learning","trl","gemma","transformers","token-type-ids"],
+    "issue_url":"https://github.com/huggingface/trl/issues/5032",
+    "learning_summary":"Gemma-3 models require explicit token_type_ids; GRPOTrainer didn't pass them, crashing during packed sequence RL training",
+    "skills_developed":["RLHF training loops","HuggingFace TRL internals","Model-specific tokenization","Packed sequence processing"],
+    "blog_body":"## Gemma-3 und TRL: Warum token_type_ids RL-Training crashen lassen\n\n### Das Problem\n`trl.GRPOTrainer.train()` mit gemma-3 Basis-Modell -> ValueError: token_type_ids must be provided.\n\n### Die Ursache\nGemma-3 verwendet ein eigenes Attention-Masking-Schema, das token_type_ids ben\u00f6tigt. Die TRL-Trainer (GRPO + PPO) haben generate() ohne token_type_ids aufgerufen.\n\nBei gepackten Sequenzen (DataCollatorForCompletionOnlyLM) werden mehrere Samples in eine Sequenz gepackt. token_type_ids unterscheiden Prompt von Completion \u2014 ohne sie kann das Modell nicht unterscheiden.\n\n### Die L\u00f6sung\ntoken_type_ids in generate() \u00fcbergeben + DataCollator-Padding anpassen. 25 Zeilen fix, 5 Dateien.\n\n### Was ich gelernt habe\n1. Jeder Model-Typ hat Eigenheiten. Gemma-3 ist kein Llama-Klon.\n2. TRL Trainer abstrahieren generate()-Calls mehrfach \u2014 der Bug lag in 3 Schichten.\n3. HuggingFace bot auto-closed first PR (fehlende AI-Declaration-Checkbox). Zweiter Versuch erfolgreich.\n4. Model-Agnostizit\u00e4t vs. Model-Spezifik: TRL will generisch sein, aber Modelle brauchen spezifisches Handling."
+  },
+  {
+    "date":"2026-04-26","repo":"Nixtla/coreforecast","pr_number":131,
+    "pr_url":"https://github.com/Nixtla/coreforecast/pull/131",
+    "title":"Fix: handle None __doc__ when PYTHONOPTIMIZE=2",
+    "category":"python-runtime","difficulty":"advanced",
+    "tags":["python","optimization","docstrings","c-extensions","coreforecast"],
+    "issue_url":"https://github.com/Nixtla/coreforecast/issues/130",
+    "learning_summary":"Under PYTHONOPTIMIZE=2 (-OO), __doc__ is None, causing segfaults in rolling.py/expanding.py",
+    "skills_developed":["Python runtime internals","C-extension debugging","Optimization levels","Segfault analysis"],
+    "blog_body":"## Wenn Python -OO dein Programm segfaulten l\u00e4sst: coreforecast unter PYTHONOPTIMIZE=2\n\n### Das Problem\n`python -OO -c \"from coreforecast import *\"` -> Segmentation Fault.\n\n### Die Ursache\nPython's -OO flag entfernt Docstrings (__doc__ = None). In rolling.py und expanding.py wurde __doc__ direkt in Bedingungen verwendet:\n\n```python\nif 'value' in __doc__:\n    ...\n\n# Mit -OO wird daraus:\nif 'value' in None:  # TypeError!\n```\n\nDer TypeError wird von der C-Extension nicht korrekt abgefangen -> Segfault.\n\n### Die L\u00f6sung\n`if __doc__ and 'value' in __doc__:` \u2014 None-Check vor String-Operation.\n\n### Was ich gelernt habe\n1. PYTHONOPTIMIZE=2 ist aggressiver als erwartet: Es entfernt nicht nur assert, sondern auch Docstrings.\n2. Segfaults in Python kommen oft von C-Extensions, die Python-Exceptions nicht propagieren k\u00f6nnen.\n3. __doc__ als Bedingung zu verwenden ist praktisch, aber bricht unter -OO.\n4. Nixtlas coreforecast ist eine Cython/C-Extension \u2014 der Fix lag im Python-Wrapper, nicht im C-Code."
+  }
+];
+
+// Sort by date asc for logical progression
+CONTRIBUTIONS.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+// ─── Markdown Renderer (Simple) ─────────────────
+function renderMarkdown(md) {
+  let h = md
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`]+)`/g,'<code>$1</code>')
+    .replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>')
+    .replace(/^- (.+)$/gm,'<li>$1</li>')
+    .replace(/(<li>.*<\/li>\n?)+/g,(m)=>{
+      const isOrdered = /^\d+\./.test(m);
+      const tag = isOrdered?'ol':'ul';
+      return `<${tag}>${m}</${tag}>`;
+    })
+    .replace(/^---$/gm,'<hr>')
+    .replace(/```(\w*)\n([\s\S]*?)```/g,'<pre><code>$2</code></pre>')
+    .replace(/\n\n/g,'</p><p>')
+    .replace(/^(.+)$/gm,(m)=>{
+      if(/^<\/?(h\d|ul|ol|li|pre|hr|p)/.test(m)) return m;
+      if(m.startsWith('<')) return m;
+      return m;
+    });
+  return '<p>'+h+'</p>';
+}
+
+// ─── Learning Curve SVG ─────────────────────────
+function buildCurve() {
+  const svg = document.getElementById('curveSvg');
+  const W = 900, H = 320;
+  const padL = 120, padR = 60, padT = 50, padB = 60;
+  const cw = W - padL - padR;
+  const ch = H - padT - padB;
+
+  const levels = {'beginner':0,'intermediate':1,'advanced':2};
+  const colors = {0:'var(--green)',1:'var(--orange)',2:'var(--purple)'};
+
+  // Position each point based on index and difficulty
+  const points = CONTRIBUTIONS.map((c,i) => {
+    const lvl = levels[c.difficulty] || 0;
+    const x = padL + (i / (CONTRIBUTIONS.length-1 || 1)) * cw;
+    const y = padT + ch - (lvl / 2) * ch;
+    return {x, y, lvl, idx:i, ...c};
+  });
+
+  // Build SVG path (smooth cubic bezier)
+  let pathD = `M ${points[0].x} ${points[0].y}`;
+  for(let i=1;i<points.length;i++){
+    const p0=points[i-1], p1=points[i];
+    const cx = (p0.x+p1.x)/2;
+    pathD += ` C ${cx} ${p0.y}, ${cx} ${p1.y}, ${p1.x} ${p1.y}`;
+  }
+
+  // Gradient for path
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="curveGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="${getComputedStyle(document.documentElement).getPropertyValue('--green').trim() || '#22c55e'}"/>
+        <stop offset="50%" stop-color="${getComputedStyle(document.documentElement).getPropertyValue('--orange').trim() || '#f59e0b'}"/>
+        <stop offset="100%" stop-color="${getComputedStyle(document.documentElement).getPropertyValue('--purple').trim() || '#a855f7'}"/>
+      </linearGradient>
+    </defs>
+  `;
+
+  // Helper to resolve CSS var
+  function cssvar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#1a1a28'; }
+
+  // Background grid lines
+  for(let l=0;l<=2;l++){
+    const y = padT + ch - (l/2)*ch;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',padL); line.setAttribute('y1',y);
+    line.setAttribute('x2',W-padR); line.setAttribute('y2',y);
+    line.style.stroke = cssvar('--bg4'); line.setAttribute('stroke-dasharray','4,4');
+    line.setAttribute('stroke-width','1');
+    svg.appendChild(line);
+    // Level label
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x',padL-10); txt.setAttribute('y',y+4);
+    txt.setAttribute('text-anchor','end');
+    txt.style.fill = cssvar('--text3');
+    txt.style.fontSize = '.7rem';
+    txt.style.fontFamily = cssvar('--font');
+    const labels = ['B','I','A'];
+    txt.textContent = labels[l];
+    svg.appendChild(txt);
+  }
+
+  // The curve
+  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',pathD);
+  path.setAttribute('fill','none');
+  path.setAttribute('stroke','url(#curveGrad)');
+  path.setAttribute('stroke-width','3');
+  path.setAttribute('stroke-linecap','round');
+  path.setAttribute('stroke-linejoin','round');
+  path.style.filter = 'drop-shadow(0 0 6px rgba(37,99,235,.2))';
+  svg.appendChild(path);
+
+  // Glow area under curve
+  const areaD = pathD + ` L ${points[points.length-1].x} ${padT+ch} L ${points[0].x} ${padT+ch} Z`;
+  const area = document.createElementNS('http://www.w3.org/2000/svg','path');
+  area.setAttribute('d',areaD);
+  area.setAttribute('fill','url(#curveGrad)');
+  area.style.opacity = '0.06';
+  svg.appendChild(area);
+
+  // Points and labels
+  points.forEach((p,i) => {
+    // Outer glow circle
+    const glow = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    glow.setAttribute('cx',p.x); glow.setAttribute('cy',p.y);
+    glow.setAttribute('r','12');
+    glow.style.fill = cssvar('--accent');
+    glow.style.opacity = '0.1';
+    svg.appendChild(glow);
+
+    // Main dot
+    const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx',p.x); dot.setAttribute('cy',p.y);
+    dot.setAttribute('r','6');
+    dot.setAttribute('fill',`hsl(${220 + i*15},80%,55%)`);
+    dot.style.stroke = cssvar('--bg');
+    dot.setAttribute('stroke-width','2');
+    dot.classList.add('curve-point');
+    dot.dataset.idx = i;
+    dot.addEventListener('click',()=>{
+      showContribution(i);
+      document.querySelectorAll('.curve-point').forEach(d=>d.classList.remove('active'));
+      dot.classList.add('active');
+    });
+    svg.appendChild(dot);
+
+    // Label
+    const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+    label.setAttribute('x',p.x); label.setAttribute('y',p.y-14);
+    label.setAttribute('text-anchor','middle');
+    label.style.fill = cssvar('--text3');
+    label.style.fontSize = '.65rem';
+    label.style.fontFamily = cssvar('--font');
+    const short = p.title.length > 35 ? p.title.slice(0,33)+'…' : p.title;
+    label.textContent = short;
+    label.classList.add('curve-label');
+    svg.appendChild(label);
+  });
+
+  // Milestones (bottom)
+  const milestonesDiv = document.getElementById('curveMilestones');
+  points.forEach((p,i)=>{
+    const m = document.createElement('span');
+    m.className = 'milestone';
+    m.textContent = `#${i+1} ${p.category}`;
+    m.dataset.idx = i;
+    m.addEventListener('click',()=>showContribution(i));
+    milestonesDiv.appendChild(m);
+  });
+}
+
+// ─── Contribution Cards ─────────────────────────
+function buildCards() {
+  const grid = document.getElementById('cardsGrid');
+  grid.innerHTML = '';
+
+  CONTRIBUTIONS.forEach((c,i) => {
+    const card = document.createElement('div');
+    card.className = 'card fade-in';
+
+    const diffClass = c.difficulty==='beginner'?'diff-beginner':c.difficulty==='advanced'?'diff-advanced':'diff-intermediate';
+    const statusId = `status-${i}`;
+
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-title"><a href="${c.pr_url}" target="_blank" rel="noopener">${c.title}</a></div>
+        <span class="badge badge-status status-loading" id="${statusId}">···</span>
+      </div>
+      <div class="card-meta">
+        <span class="badge badge-repo">${c.repo}</span>
+        <span class="badge badge-category">${c.category}</span>
+        <span class="badge ${diffClass}">${c.difficulty}</span>
+      </div>
+      <div class="tags">${c.tags.map(t=>`<span class="tag">#${t}</span>`).join('')}</div>
+      <div class="learning-box"><strong>📚 Gelernt:</strong> ${c.learning_summary}</div>
+      <div class="card-links">
+        <a href="${c.pr_url}" target="_blank" rel="noopener">🔗 PR</a>
+        <a href="${c.issue_url||'#'}" target="_blank" rel="noopener">🐛 Issue</a>
+      </div>
+      <button class="blog-toggle" onclick="toggleBlog(${i})">📝 Blog Post ▾</button>
+      <div class="blog-content" id="blog-${i}">${renderMarkdown(c.blog_body)}</div>
+    `;
+
+    grid.appendChild(card);
+
+    // Fetch PR status
+    fetchPRStatus(c, i);
+  });
+
+  // Intersection Observer for fade-in
+  const observer = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target)}});
+  },{threshold:.1});
+  document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
+}
+
+function toggleBlog(i) {
+  const el = document.getElementById(`blog-${i}`);
+  const btn = el.previousElementSibling;
+  if(el.classList.contains('open')){
+    el.classList.remove('open');
+    btn.innerHTML = '📝 Blog Post ▾';
+  } else {
+    el.classList.add('open');
+    btn.innerHTML = '📝 Blog Post ▴';
+  }
+}
+
+async function fetchPRStatus(c, idx) {
+  const el = document.getElementById(`status-${idx}`);
+  try {
+    const [owner, repo] = c.repo.split('/');
+    const resp = await fetch(`https://api.github.com/repos/${c.repo}/pulls/${c.pr_number}`, {
+      headers: {'Accept':'application/vnd.github.v3+json'},
+      signal: AbortSignal.timeout(5000)
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const state = data.merged ? 'MERGED' : data.state === 'closed' ? 'CLOSED' : 'OPEN';
+    const cls = state==='OPEN'?'status-open':state==='MERGED'?'status-merged':'status-closed';
+    el.className = `badge badge-status ${cls}`;
+    el.textContent = state;
+  } catch(e) {
+    // Fallback: use local status (default OPEN)
+    el.className = 'badge badge-status status-open';
+    el.textContent = 'OPEN';
+  }
+}
+
+// ─── Skills Radar Chart ─────────────────────────
+function buildRadar() {
+  // Aggregate skills frequency
+  const skillCount = {};
+  CONTRIBUTIONS.forEach(c => {
+    c.skills_developed.forEach(s => {
+      const key = s.trim();
+      skillCount[key] = (skillCount[key]||0) + 1;
+    });
+  });
+
+  let skills = Object.entries(skillCount)
+    .map(([name, count]) => ({name,count}))
+    .sort((a,b) => b.count - a.count);
+
+  // Cap at 8 skills for readability
+  if (skills.length > 8) skills = skills.slice(0,8);
+
+  const canvas = document.getElementById('skillsRadar');
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    const size = Math.min(rect.width, 400);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    ctx.scale(dpr, dpr);
+    drawRadar(ctx, size, skills);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+}
+
+function drawRadar(ctx, size, skills) {
+  const cx = size/2, cy = size/2;
+  const maxR = size * 0.38;
+  const n = skills.length;
+  const angleStep = (2 * Math.PI) / n;
+  const startAngle = -Math.PI/2;
+
+  ctx.clearRect(0,0,size,size);
+
+  function cv(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  const bg = cv('--bg2') || '#12121a';
+  const bg3 = cv('--bg3') || '#1a1a28';
+  const text2 = cv('--text2') || '#9999b0';
+  const accent = cv('--accent') || '#2563eb';
+
+  // Grid rings
+  for(let ring=1;ring<=5;ring++){
+    const r = (maxR*ring)/5;
+    ctx.beginPath();
+    for(let i=0;i<=n;i++){
+      const angle = startAngle + i * angleStep;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = ring%2===0 ? bg3 : 'transparent';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Axis lines
+  for(let i=0;i<n;i++){
+    const angle = startAngle + i * angleStep;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+maxR*Math.cos(angle), cy+maxR*Math.sin(angle));
+    ctx.strokeStyle = bg3;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Data polygon
+  const maxCount = Math.max(...skills.map(s=>s.count));
+  ctx.beginPath();
+  for(let i=0;i<=n;i++){
+    const idx = i%n;
+    const angle = startAngle + i * angleStep;
+    const val = skills[idx].count / maxCount;
+    const r = maxR * val;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(37,99,235,0.12)';
+  ctx.fill();
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Data dots and labels
+  skills.forEach((s,i)=>{
+    const angle = startAngle + i * angleStep;
+    const val = s.count / maxCount;
+    const r = maxR * val;
+    const px = cx + r * Math.cos(angle);
+    const py = cy + r * Math.sin(angle);
+
+    // Dot
+    ctx.beginPath();
+    ctx.arc(px,py,4,0,2*Math.PI);
+    ctx.fillStyle = accent;
+    ctx.fill();
+
+    // Label
+    const lr = maxR * 1.15;
+    const lx = cx + lr * Math.cos(angle);
+    const ly = cy + lr * Math.sin(angle);
+    ctx.font = '11px Inter,system-ui,sans-serif';
+    ctx.textAlign = angle > startAngle+Math.PI*0.5 && angle < startAngle+Math.PI*1.5 ? 'right' : 'left';
+    ctx.textBaseline = 'middle';
+    const label = s.name.length > 18 ? s.name.slice(0,16)+'…' : s.name;
+    ctx.fillStyle = text2;
+    ctx.fillText(label, lx, ly);
+  });
+
+  // Center label
+  ctx.font = '10px Inter,system-ui,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = text2;
+  ctx.fillText('Skills', cx, cy-6);
+  ctx.fillStyle = text2;
+  ctx.font = '8px Inter,system-ui,sans-serif';
+  ctx.fillText(`${skills.length} areas`, cx, cy+10);
+
+  // Build legend
+  const legend = document.getElementById('radarLegend');
+  legend.innerHTML = '<h3 style="font-size:1rem;font-weight:600;margin-bottom:.75rem;color:var(--text)">Skill Areas</h3>';
+  skills.forEach(s=>{
+    const item = document.createElement('div');
+    item.className = 'radar-legend-item';
+    item.innerHTML = `
+      <span class="radar-legend-dot" style="background:${accent}"></span>
+      <span class="radar-legend-label">${s.name}</span>
+      <span class="radar-legend-count">×${s.count}</span>
+    `;
+    legend.appendChild(item);
+  });
+}
+
+// ─── Detail Panel ───────────────────────────────
+function showContribution(idx) {
+  const c = CONTRIBUTIONS[idx];
+  const panel = document.getElementById('detailPanel');
+  const overlay = document.getElementById('detailOverlay');
+  const content = document.getElementById('detailContent');
+
+  const diffClass = c.difficulty==='beginner'?'diff-beginner':c.difficulty==='advanced'?'diff-advanced':'diff-intermediate';
+
+  content.innerHTML = `
+    <h3>${c.title}</h3>
+    <div class="card-meta" style="margin:.5rem 0">
+      <span class="badge badge-repo">${c.repo}</span>
+      <span class="badge badge-category">${c.category}</span>
+      <span class="badge ${diffClass}">${c.difficulty}</span>
+    </div>
+    <div class="tags" style="margin:.5rem 0">${c.tags.map(t=>`<span class="tag">#${t}</span>`).join('')}</div>
+    <div class="learning-box"><strong>📚 Gelernt:</strong> ${c.learning_summary}</div>
+    <div class="card-links" style="margin:.8rem 0">
+      <a href="${c.pr_url}" target="_blank" rel="noopener">🔗 PR</a>
+      <a href="${c.issue_url||'#'}" target="_blank" rel="noopener">🐛 Issue</a>
+    </div>
+    <div class="blog-content open" style="display:block">
+      ${renderMarkdown(c.blog_body)}
+    </div>
+  `;
+
+  panel.classList.add('open');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+  document.getElementById('detailOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('detailOverlay').addEventListener('click', closeDetail);
+
+// ─── Back to Top ────────────────────────────────
+window.addEventListener('scroll', ()=>{
+  const btn = document.getElementById('backTop');
+  btn.classList.toggle('visible', window.scrollY > 400);
+});
+
+// ─── Init ───────────────────────────────────────
+document.addEventListener('DOMContentLoaded', ()=>{
+  buildCurve();
+  buildCards();
+  buildRadar();
+});
+</script>
+
+</body>
+</html>
