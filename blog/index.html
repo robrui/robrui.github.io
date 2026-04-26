@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blog — Robert Ruidisch</title>
+  <meta name="description" content="Deep-dive articles on open-source contributions by Robert Ruidisch — from wavelet theory to RLHF infrastructure.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🐙</text></svg>">
+  <style>
+    .blog-list { list-style: none; padding: 0; }
+    .blog-entry {
+      display: flex;
+      gap: 20px;
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .blog-entry:last-child { border-bottom: none; }
+    .blog-thumb {
+      flex-shrink: 0;
+      width: 160px;
+      height: 100px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--codebg);
+    }
+    .blog-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .blog-info { flex: 1; min-width: 0; }
+    .blog-info h3 { font-size: 1.05rem; margin-bottom: 4px; }
+    .blog-info h3 a { color: var(--fg); text-decoration: none; }
+    .blog-info h3 a:hover { color: var(--accent); }
+    .blog-meta {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .blog-excerpt {
+      font-size: 0.9rem;
+      color: #444;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+    .blog-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    @media (max-width: 640px) {
+      .blog-entry { flex-direction: column; }
+      .blog-thumb { width: 100%; height: 140px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="../" class="logo"><span>r</span>obrui</a>
+    <div class="nav-links">
+      <a href="../">Home</a>
+      <a href="../projects/">Contributions</a>
+      <a href="./" class="active">Blog</a>
+    </div>
+  </div>
+</nav>
+
+<section class="hero" style="padding-bottom: 32px;">
+  <div class="container-wide container">
+    <h1>Deep-Dive <span>Blog</span></h1>
+    <p class="subtitle">
+      Behind every PR is a story — the science, the debugging, the fix.
+      Browse the full collection of contribution deep-dives.
+    </p>
+  </div>
+</section>
+
+<section class="section" style="padding-top: 0;">
+  <div class="container-wide container">
+    <ul class="blog-list">
+
+      <!-- scipy#25074 — find_peaks_cwt -->
+      <li class="blog-entry">
+        <a href="../posts/scipy-25074-find-peaks-cwt/" class="blog-thumb">
+          <img src="../assets/cwt-before.svg" alt="CWT peak detection visualization" loading="lazy">
+        </a>
+        <div class="blog-info">
+          <h3><a href="../posts/scipy-25074-find-peaks-cwt/">A One-Character Bug in <code>scipy.signal.find_peaks_cwt</code></a></h3>
+          <div class="blog-meta">
+            <span>📅 Apr 2025</span>
+            <span>⏱ ~15 min</span>
+            <span>🔧 <a href="https://github.com/scipy/scipy/pull/25074" style="color:var(--accent);text-decoration:none;">scipy#25074</a></span>
+          </div>
+          <p class="blog-excerpt">
+            A single-character indexing bug that caused the CWT peak finder to read SNR at the wrong position
+            along each wavelet ridge — silently dropping real peaks.
+          </p>
+          <div class="blog-tags">
+            <span class="tag">DSP</span>
+            <span class="tag">CWT</span>
+            <span class="tag">scipy</span>
+          </div>
+        </div>
+      </li>
+
+      <!-- trl#5644 — Gemma-3 token_type_ids -->
+      <li class="blog-entry">
+        <a href="../posts/trl-5644-gemma-token-type-ids/" class="blog-thumb">
+          <img src="../assets/trl-token-type-ids.svg" alt="token_type_ids attention mask" loading="lazy">
+        </a>
+        <div class="blog-info">
+          <h3><a href="../posts/trl-5644-gemma-token-type-ids/">Gemma-3 <code>token_type_ids</code> Support in TRL</a></h3>
+          <div class="blog-meta">
+            <span>📅 Mar 2025</span>
+            <span>⏱ ~12 min</span>
+            <span>🔧 <a href="https://github.com/huggingface/trl/pull/5644" style="color:var(--accent);text-decoration:none;">trl#5644</a></span>
+          </div>
+          <p class="blog-excerpt">
+            Adding token_type_ids for Gemma-3 in Hugging Face's TRL library to fix crashes
+            during GRPO RL training with text-only completions.
+          </p>
+          <div class="blog-tags">
+            <span class="tag tag-purple">RLHF</span>
+            <span class="tag tag-purple">transformers</span>
+            <span class="tag tag-purple">trl</span>
+          </div>
+        </div>
+      </li>
+
+      <!-- coreforecast#131 — PYTHONOPTIMIZE=2 -->
+      <li class="blog-entry">
+        <a href="../posts/coreforecast-131-python-optimize/" class="blog-thumb">
+          <img src="../assets/coreforecast-oo.svg" alt="Python -OO optimization comparison" loading="lazy">
+        </a>
+        <div class="blog-info">
+          <h3><a href="../posts/coreforecast-131-python-optimize/"><code>PYTHONOPTIMIZE=2</code> Crash in C Extensions</a></h3>
+          <div class="blog-meta">
+            <span>📅 Feb 2025</span>
+            <span>⏱ ~10 min</span>
+            <span>🔧 <a href="https://github.com/Nixtla/coreforecast/pull/131" style="color:var(--accent);text-decoration:none;">coreforecast#131</a></span>
+          </div>
+          <p class="blog-excerpt">
+            A segfault traced to assert-guarded control flow that disappeared under
+            Python's -OO optimization flag — a classic Python gotcha.
+          </p>
+          <div class="blog-tags">
+            <span class="tag tag-orange">Python Internals</span>
+            <span class="tag tag-orange">C Extensions</span>
+          </div>
+        </div>
+      </li>
+
+      <!-- darts#3087 — float16 TFT -->
+      <li class="blog-entry">
+        <a href="../posts/darts-3087-float16-tft/" class="blog-thumb">
+          <img src="../assets/darts-float16-tft.svg" alt="TFT architecture and float16 throughput" loading="lazy">
+        </a>
+        <div class="blog-info">
+          <h3><a href="../posts/darts-3087-float16-tft/">Float16 Training for Temporal Fusion Transformer</a></h3>
+          <div class="blog-meta">
+            <span>📅 Mar 2025</span>
+            <span>⏱ ~14 min</span>
+            <span>🔧 <a href="https://github.com/unit8co/darts/pull/3087" style="color:var(--accent);text-decoration:none;">darts#3087</a></span>
+          </div>
+          <p class="blog-excerpt">
+            Enabling mixed-precision (float16) training for the TFT model in darts by fixing
+            dtype/device propagation and NaN-safe attention masking.
+          </p>
+          <div class="blog-tags">
+            <span class="tag tag-green">Time Series</span>
+            <span class="tag tag-green">Deep Learning</span>
+            <span class="tag tag-green">darts</span>
+          </div>
+        </div>
+      </li>
+
+      <!-- numpy#31325 — pinv rtol -->
+      <li class="blog-entry">
+        <a href="../posts/numpy-31325-pinv-rtol/" class="blog-thumb">
+          <img src="../assets/numpy-pinv-rtol.svg" alt="Pseudo-inverse singular values" loading="lazy">
+        </a>
+        <div class="blog-info">
+          <h3><a href="../posts/numpy-31325-pinv-rtol/">Broken Pseudo-Inverse: <code>numpy.linalg.pinv</code> with <code>rtol=None</code></a></h3>
+          <div class="blog-meta">
+            <span>📅 Jan 2025</span>
+            <span>⏱ ~12 min</span>
+            <span>🔧 <a href="https://github.com/numpy/numpy/pull/31325" style="color:var(--accent);text-decoration:none;">numpy#31325</a></span>
+          </div>
+          <p class="blog-excerpt">
+            A numerical stability bug where the Moore-Penrose pseudo-inverse included
+            tiny singular values when rtol=None, producing incorrect results.
+          </p>
+          <div class="blog-tags">
+            <span class="tag">Numerical Linear Algebra</span>
+            <span class="tag">numpy</span>
+          </div>
+        </div>
+      </li>
+
+      <!-- scipy#25070 — savgol_coeffs -->
+      <li class="blog-entry">
+        <a href="../posts/scipy-25070-savgol-coeffs/" class="blog-thumb">
+          <img src="../assets/savgol-coeffs.svg" alt="Savitzky-Golay filter visualization" loading="lazy">
+        </a>
+        <div class="blog-info">
+          <h3><a href="../posts/scipy-25070-savgol-coeffs/">Edge Cases in <code>scipy.signal.savgol_coeffs</code></a></h3>
+          <div class="blog-meta">
+            <span>📅 Apr 2025</span>
+            <span>⏱ ~13 min</span>
+            <span>🔧 <a href="https://github.com/scipy/scipy/pull/25070" style="color:var(--accent);text-decoration:none;">scipy#25070</a></span>
+          </div>
+          <p class="blog-excerpt">
+            Missing validation and incorrect normalization in Savitzky-Golay coefficient
+            computation — a DSP classic that every signal processor uses.
+          </p>
+          <div class="blog-tags">
+            <span class="tag">DSP</span>
+            <span class="tag">Savitzky-Golay</span>
+            <span class="tag">scipy</span>
+          </div>
+        </div>
+      </li>
+
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="social-links">
+      <a href="https://github.com/robrui">GitHub</a>
+      <a href="https://www.linkedin.com/in/robert-ruidisch/">LinkedIn</a>
+      <a href="mailto:robert.ruidisch@gmail.com">Email</a>
+    </div>
+    <p>© 2025 Robert Ruidisch · 6 deep-dives and counting</p>
+  </div>
+</footer>
+
+</body>
+</html>

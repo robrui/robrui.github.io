@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Savitzky-Golay Coefficient Validation — Robert Ruidisch</title>
+  <meta name="description" content="Deep-dive into scipy#25070: fixing edge-case behavior in scipy.signal.savgol_coeffs for Savitzky-Golay filter coefficient computation.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🐙</text></svg>">
+  <script>window.MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},options:{enableMenu:false}};</script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <style>.diff-add{background:#dcfce7}.diff-rem{background:#fee2e2}</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="../../" class="logo"><span>r</span>obrui</a>
+    <div class="nav-links">
+      <a href="../../">Home</a>
+      <a href="../../projects/">Contributions</a>
+      <a href="../../blog/">Blog</a>
+    </div>
+  </div>
+</nav>
+
+<article>
+
+<header class="post-header">
+  <div class="container-narrow container">
+    <div class="post-label">📝 Deep-Dive</div>
+    <h1>Edge Cases in <code>scipy.signal.savgol_coeffs</code></h1>
+    <div class="post-meta">
+      <span><a href="https://github.com/scipy/scipy/pull/25070">scipy#25070</a></span>
+      &nbsp;·&nbsp; <span>April 2025</span>
+      &nbsp;·&nbsp; <span>~13 min read</span>
+    </div>
+  </div>
+</header>
+
+<div class="post-content">
+  <div class="container-narrow container">
+
+    <blockquote>
+      <strong>TL;DR:</strong> <code>scipy.signal.savgol_coeffs</code> computes Savitzky-Golay filter coefficients via least-squares polynomial fitting. It had several edge-case bugs: (1) missing validation for <code>window_length &lt;= order</code>, (2) strange behavior with <code>window_length=1</code>, and (3) incorrect coefficient normalization for high-order polynomials. The fix adds proper parameter validation and correct coefficient normalization.
+    </blockquote>
+
+    <!-- ── 1. Savitzky-Golay Filters ── -->
+    <h2>1. Background: The Savitzky-Golay Filter</h2>
+
+    <p>
+      The Savitzky-Golay (SG) filter is one of the most widely used digital signal
+      processing tools. It smooths a signal by fitting successive sub-sets of
+      adjacent data points with a low-degree polynomial using <strong>linear least
+      squares</strong>.
+    </p>
+
+    <p>
+      Given a signal $y[n]$, the filter computes each smoothed point as:
+    </p>
+
+    $$ \hat{y}[i] = \sum_{k=-M}^{M} c_k \; y[i + k] $$
+
+    <p>
+      where $M = \lfloor W/2 \rfloor$ and $W$ is the <strong>window length</strong>.
+      The coefficients $c_k$ are computed by fitting a polynomial of degree $d$
+      (the <strong>order</strong>) to the $W$ points centered at $i$, and then
+      evaluating the polynomial at the center.
+    </p>
+
+    <p>
+      Mathematically, for a window of $W = 2M + 1$ points and polynomial order $d$:
+    </p>
+
+    $$ \mathbf{A} = \begin{bmatrix}
+    (-M)^0 & (-M)^1 & \cdots & (-M)^d \\
+    (-M+1)^0 & (-M+1)^1 & \cdots & (-M+1)^d \\
+    \vdots & \vdots & \ddots & \vdots \\
+    M^0 & M^1 & \cdots & M^d
+    \end{bmatrix} \in \mathbb{R}^{W \times (d+1)} $$
+
+    <p>The least-squares solution gives the polynomial coefficients $\beta$:</p>
+
+    $$ \beta = (\mathbf{A}^T \mathbf{A})^{-1} \mathbf{A}^T \mathbf{y} $$
+
+    <p>
+      The filter coefficients $c_k$ are simply the first row of $(\mathbf{A}^T \mathbf{A})^{-1} \mathbf{A}^T$
+      — i.e., the linear coefficients that extract the constant term of the fitted polynomial.
+    </p>
+
+    <figure>
+      <img src="../../assets/savgol-coeffs.svg" alt="Savitzky-Golay filter visualization: filtering, coefficients, frequency response, and validation" style="max-width: 100%;">
+      <figcaption>Figure 1: (Top left) SG filtering a noisy sine wave. (Top right) SG filter coefficients for window=11, order=3. (Bottom left) Frequency response — note the low-pass characteristic. (Bottom right) Valid parameter space: order must be less than window_length.</figcaption>
+    </figure>
+
+    <!-- ── 2. The Bugs ── -->
+    <h2>2. Three Edge-Case Bugs</h2>
+
+    <h3>Bug #1: <code>window_length &lt;= order</code> Not Validated</h3>
+
+    <p>
+      The most fundamental constraint of the Savitzky-Golay filter is that the
+      polynomial order must be <strong>less than</strong> the window length.
+      If $d \geq W$, the least-squares fit is underdetermined — there are more
+      polynomial coefficients than data points.
+    </p>
+
+    <pre><code class="language-python">from scipy.signal import savgol_coeffs
+
+# This should raise an error but silently returned garbage
+coeffs = savgol_coeffs(window_length=5, order=5)
+# ❌ order=5 and window_length=5 means 6 polynomial coefficients
+# for only 5 data points — rank-deficient system!</code></pre>
+
+    <p>
+      The minimum requirement is $d &lt; W$ (or equivalently, $d \leq W - 1$).
+      Many textbooks state $d \leq W - 2$ as the practical limit because
+      the highest-degree polynomial is often poorly conditioned.
+    </p>
+
+    <h3>Bug #2: <code>window_length=1</code> Division by Zero</h3>
+
+    <p>
+      With <code>window_length=1</code>, there is only one data point.
+      The Vandermonde matrix has a single row, and the least-squares system
+      becomes degenerate. The function either crashed with a
+      <code>LinAlgError</code> or returned coefficients that didn't satisfy
+      the Savitzky-Golay properties.
+    </p>
+
+    <pre><code class="language-python"># window_length=1: single point, single coefficient
+coeffs = savgol_coeffs(window_length=1, order=0)
+# Expected: coeffs = [1.0] (trivial — identity filter)
+# Bug: crash or wrong result</code></pre>
+
+    <h3>Bug #3: Incorrect Normalization for High Order</h3>
+
+    <p>
+      For certain combinations of window length and high polynomial order,
+      the computed coefficients didn't preserve the DC gain of 1. A proper
+      Savitzky-Golay filter must satisfy $\sum c_k = 1$ for order ≥ 1
+      (the method preserves the mean of a constant signal). The buggy
+      normalization code failed for edge-case parameters.
+    </p>
+
+    <!-- ── 3. The Fix ── -->
+    <h2>3. The Fix: Proper Validation and Robust Computation</h2>
+
+    <p>
+      The PR addresses all three bugs with comprehensive parameter validation
+      and a numerically stable coefficient computation path:
+    </p>
+
+    <pre><code class="language-python">def savgol_coeffs(window_length, order, deriv=0, delta=1.0, pos=None, use="conv"):
+    <span class="diff-add"># ✅ Validate window_length
+    if window_length &lt; 1:
+        raise ValueError("window_length must be &gt;= 1")
+    if not isinstance(window_length, (int, np.integer)):
+        raise TypeError("window_length must be an integer")</span>
+    
+    <span class="diff-add"># ✅ Validate order &lt; window_length
+    if order &gt;= window_length:
+        raise ValueError(
+            f"order must be less than window_length "
+            f"(got order={order}, window_length={window_length})"
+        )</span>
+    
+    <span class="diff-add"># ✅ Handle window_length=1 trivially
+    if window_length == 1:
+        return np.array([1.0])</span>
+    
+    # ... rest of the computation with improved normalization
+    half = window_length // 2
+    x = np.arange(-half, half + 1)
+    A = np.vander(x, order + 1, increasing=True)
+    
+    # Solve least-squares
+    _, coeffs, _, _ = np.linalg.lstsq(A, np.eye(window_length)[half], rcond=None)
+    
+    <span class="diff-add"># ✅ Normalize to ensure DC gain = 1
+    coeffs = coeffs / coeffs.sum()</span>
+    
+    return coeffs</code></pre>
+
+    <!-- ── 4. Reproducing and Verifying ── -->
+    <h2>4. Testing the Fix</h2>
+
+    <pre><code class="language-python">from scipy.signal import savgol_coeffs
+import numpy as np
+
+def test_savgol_coeffs():
+    """Verify Savitzky-Golay properties."""
+    
+    # 1. DC gain must be 1
+    coeffs = savgol_coeffs(window_length=7, order=3)
+    assert np.isclose(coeffs.sum(), 1.0), \
+        f"DC gain != 1: {coeffs.sum()}"
+    
+    # 2. Coefficients must be symmetric (even function)
+    assert np.allclose(coeffs, coeffs[::-1]), \
+        "SG coefficients must be symmetric"
+    
+    # 3. window_length=1, order=0 returns [1.0]
+    coeffs1 = savgol_coeffs(window_length=1, order=0)
+    assert np.array_equal(coeffs1, [1.0]), \
+        f"window_length=1 failed: {coeffs1}"
+    
+    # 4. order >= window_length raises ValueError
+    try:
+        savgol_coeffs(window_length=5, order=5)
+        assert False, "Should have raised ValueError"
+    except ValueError:
+        pass  # Expected
+    
+    # 5. Even-order fitting on a quadratic
+    x = np.linspace(0, 5, 50)
+    y = x**2 + np.random.randn(50) * 0.5
+    from scipy.signal import savgol_filter
+    y_smooth = savgol_filter(y, window_length=11, order=3)
+    # Smooth version should still be approximately x^2
+    assert np.corrcoef(y_smooth, x**2)[0, 1] > 0.99, \
+        "SG filter failed to preserve quadratic trend"
+    
+    print("All tests passed ✓")</code></pre>
+
+    <!-- ── 5. Practical Application ── -->
+    <h2>5. Using Savitzky-Golay in Practice</h2>
+
+    <pre><code class="language-python">import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import savgol_filter, savgol_coeffs
+
+# Generate a noisy ECG-like signal
+t = np.linspace(0, 2, 500)
+clean = np.sin(2 * np.pi * 5 * t) + 0.5 * np.sin(2 * np.pi * 20 * t)
+noisy = clean + 0.3 * np.random.randn(500)
+
+# Apply SG filter with optimal parameters
+# Window length: odd number ≥ order + 2
+# Lower order = more smoothing, higher order = preserves features
+y_smooth = savgol_filter(noisy, window_length=21, order=3)
+
+# For derivative estimation (e.g., velocity from position)
+# Use deriv=1 to get the first derivative
+coeffs_1st = savgol_coeffs(11, 3, deriv=1, delta=0.01)</code></pre>
+
+    <p>
+      The key parameters to tune:
+    </p>
+
+    <ul>
+      <li><strong>window_length:</strong> Larger = smoother but more lag. Must be odd.</li>
+      <li><strong>order:</strong> Higher = preserves more detail but less noise reduction. Must be &lt; window_length.</li>
+      <li><strong>deriv:</strong> 0 for smoothing, 1 for first derivative, etc.</li>
+    </ul>
+
+    <!-- ── 6. Why This Matters ── -->
+    <h2>6. Why This Matters</h2>
+
+    <p>
+      The Savitzky-Golay filter is used by essentially anyone working with
+      real-world signal data:
+    </p>
+
+    <ul>
+      <li><strong>Spectroscopy:</strong> Smoothing Raman, IR, and UV-Vis spectra</li>
+      <li><strong>Bio-signals:</strong> ECG baseline wander removal, EMG smoothing</li>
+      <li><strong>Sensor data:</strong> Accelerometer, gyroscope denoising</li>
+      <li><strong>Financial time series:</strong> Trend extraction from noisy price data</li>
+      <li><strong>Analytical chemistry:</strong> Chromatogram peak smoothing</li>
+    </ul>
+
+    <p>
+      The <code>savgol_coeffs</code> function is the computational kernel behind
+      <code>scipy.signal.savgol_filter</code>, which is itself one of SciPy's most
+      downloaded functions. Edge-case bugs in coefficient computation can produce
+      silently corrupted filtering results for specific parameter combinations —
+      the kind of bug that users discover months later in production.
+    </p>
+
+    <p>
+      By adding proper validation and robust normalization, this PR ensures that
+      <code>savgol_coeffs</code> either returns correct coefficients or raises a
+      clear error — no silent failures.
+    </p>
+
+    <!-- ── 7. Related Contributions ── -->
+    <h2>7. Related Deep-Dives</h2>
+
+    <ul>
+      <li>
+        <a href="../scipy-25074-find-peaks-cwt/">SNR Bug in scipy.signal.find_peaks_cwt</a> —
+        Another SciPy signal processing bug, this time in CWT peak detection
+      </li>
+      <li>
+        <a href="../numpy-31325-pinv-rtol/">pinv with rtol=None in NumPy</a> —
+        Numerical stability in linear algebra
+      </li>
+      <li>
+        <a href="../darts-3087-float16-tft/">Float16 Training for TFT in darts</a> —
+        Numerical precision in deep learning
+      </li>
+    </ul>
+
+    <hr style="margin: 48px 0; border: none; border-top: 1px solid var(--border);">
+
+    <p style="text-align: center; color: var(--muted); font-size: 0.9rem;">
+      <em>Found this useful?</em> · <a href="https://github.com/robrui">Follow on GitHub</a> · <a href="https://www.linkedin.com/in/robert-ruidisch/">Connect on LinkedIn</a>
+    </p>
+
+  </div>
+</div>
+
+</article>
+
+<footer>
+  <div class="container">
+    <div class="social-links">
+      <a href="https://github.com/robrui">GitHub</a>
+      <a href="https://www.linkedin.com/in/robert-ruidisch/">LinkedIn</a>
+      <a href="mailto:robert.ruidisch@gmail.com">Email</a>
+    </div>
+    <p>© 2025 Robert Ruidisch</p>
+  </div>
+</footer>
+
+</body>
+</html>

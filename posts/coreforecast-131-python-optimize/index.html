@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PYTHONOPTIMIZE=2 Crash in coreforecast — Robert Ruidisch</title>
+  <meta name="description" content="Deep-dive into coreforecast#131: a segfault caused by Python's -OO flag stripping assert statements that gated critical control flow.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../../assets/style.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='28' font-size='28'>🐙</text></svg>">
+  <script>window.MathJax={tex:{inlineMath:[['$','$'],['\\(','\\)']],displayMath:[['$$','$$'],['\\[','\\]']]},options:{enableMenu:false}};</script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script>hljs.highlightAll();</script>
+  <style>.diff-add{background:#dcfce7}.diff-rem{background:#fee2e2}</style>
+</head>
+<body>
+
+<nav>
+  <div class="container">
+    <a href="../../" class="logo"><span>r</span>obrui</a>
+    <div class="nav-links">
+      <a href="../../">Home</a>
+      <a href="../../projects/">Contributions</a>
+      <a href="../../blog/">Blog</a>
+    </div>
+  </div>
+</nav>
+
+<article>
+
+<header class="post-header">
+  <div class="container-narrow container">
+    <div class="post-label">📝 Deep-Dive</div>
+    <h1><code>PYTHONOPTIMIZE=2</code> Crashing C Extensions</h1>
+    <div class="post-meta">
+      <span><a href="https://github.com/Nixtla/coreforecast/pull/131">coreforecast#131</a></span>
+      &nbsp;·&nbsp; <span>February 2025</span>
+      &nbsp;·&nbsp; <span>~10 min read</span>
+    </div>
+  </div>
+</header>
+
+<div class="post-content">
+  <div class="container-narrow container">
+
+    <blockquote>
+      <strong>TL;DR:</strong> Nixtla's coreforecast library crashed with a segmentation fault when Python ran with <code>-OO</code> (<code>PYTHONOPTIMIZE=2</code>). Root cause: <code>assert __init__.__doc__</code> was used as a guard before calling <code>.format()</code> on it — but <code>-OO</code> strips all <code>__doc__</code> strings, making them <code>None</code>. The fix: replace <code>assert</code>-based guarding with an explicit <code>if __init__.__doc__:</code> check.
+    </blockquote>
+
+    <!-- ── 1. Python Optimization Flags ── -->
+    <h2>1. Background: Python's <code>-O</code> and <code>-OO</code> Flags</h2>
+
+    <p>
+      Python offers two optimization levels beyond the default:
+    </p>
+
+    <table style="width:100%; border-collapse: collapse; margin: 16px 0;">
+      <tr style="border-bottom: 1px solid var(--border);">
+        <th style="padding: 8px; text-align: left;">Flag</th>
+        <th style="padding: 8px; text-align: left;">Effect</th>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border);">
+        <td style="padding: 8px;"><code>-O</code> (level 1)</td>
+        <td style="padding: 8px;">Removes <code>assert</code> statements. Sets <code>__debug__ = False</code>.</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px;"><code>-OO</code> (level 2)</td>
+        <td style="padding: 8px;">Does everything <code>-O</code> does, plus strips <strong><code>__doc__</code></strong> strings.</td>
+      </tr>
+    </table>
+
+    <p>
+      These flags are commonly used in production deployments to reduce memory
+      footprint and improve startup time. The CPython compiler simply omits
+      docstrings from the bytecode when <code>-OO</code> is active:
+    </p>
+
+    <pre><code class="language-python"># With -OO: this entire string literal is compiled to a NOP and eliminated
+def my_function():
+    """This docstring disappears under -OO, becoming None."""
+    pass
+
+# For class __init__:
+class MyClass:
+    def __init__(self):
+        """This also becomes None under -OO."""
+        pass
+
+# Attempting .format() on None: AttributeError!
+print(MyClass.__init__.__doc__)  # None under -OO
+MyClass.__init__.__doc__.format(x=42)  # ❌ AttributeError</code></pre>
+
+    <p>
+      Most production Python code accounts for this. But the coreforecast library
+      had a subtle pattern that didn't.
+    </p>
+
+    <!-- ── 2. The Bug ── -->
+    <h2>2. The Bug: assert-Guarded Docstring Formatting</h2>
+
+    <p>
+      The pattern in coreforecast looked something like this:
+    </p>
+
+    <pre><code class="language-python">class SomeModel:
+    def __init__(self, param1, param2):
+        """Initialize model.
+        
+        Parameters
+        ----------
+        param1 : {type1}
+            Description of param1.
+        param2 : {type2}
+            Description of param2.
+        """
+        # ... setup code ...
+
+# After class definition, dynamically update docstring with types
+<span class="diff-rem">assert __init__.__doc__  # Guard</span>
+__init__.__doc__ = __init__.__doc__.format(type1="float", type2="int")</code></pre>
+
+    <p>
+      The developer used <code>assert __init__.__doc__</code> as a guard to ensure
+      the docstring exists before calling <code>.format()</code> on it. Under normal
+      Python (no optimization flags), this works perfectly:
+    </p>
+
+    <ul>
+      <li><code>assert __init__.__doc__</code> passes ✓</li>
+      <li><code>.format()</code> succeeds ✓</li>
+      <li>Docstring is populated with actual types ✓</li>
+    </ul>
+
+    <p>
+      But under <code>-OO</code>:
+    </p>
+
+    <ol>
+      <li><code>__init__.__doc__</code> is <code>None</code> (stripped by compiler)</li>
+      <li>The <code>assert</code> statement is <strong>removed entirely</strong> by the compiler</li>
+      <li><code>.format()</code> is called on <code>None</code> → <code>AttributeError</code></li>
+      <li>If this happens at module import time, the import fails → cascade of failures</li>
+    </ol>
+
+    <p>
+      In coreforecast's case, the crash was even more severe. The docstring formatting
+      was part of a C extension's module initialization, and the <code>AttributeError</code>
+      propagated through the C API boundary, causing a <strong>segmentation fault</strong>
+      rather than a clean Python exception.
+    </p>
+
+    <figure>
+      <img src="../../assets/coreforecast-oo.svg" alt="Comparison of normal Python vs PYTHONOPTIMIZE=2 modes" style="max-width: 100%;">
+      <figcaption>Figure 1: Python behavior under normal mode vs. <code>PYTHONOPTIMIZE=2</code>. Critical control flow and assertions silently disappear.</figcaption>
+    </figure>
+
+    <!-- ── 3. The Fix ── -->
+    <h2>3. The Fix: Proper Runtime Guard</h2>
+
+    <p>
+      The fix is to replace the <code>assert</code> guard with an explicit runtime check
+      that survives optimization:
+    </p>
+
+    <pre><code class="language-python"># Before: ❌ assert gets removed under -O/-OO
+<span class="diff-rem">assert __init__.__doc__</span>
+__init__.__doc__ = __init__.__doc__.format(type1="float", type2="int")
+
+# After: ✅ Runtime guard -OO can't remove
+<span class="diff-add">if __init__.__doc__:</span>
+    __init__.__doc__ = __init__.__doc__.format(type1="float", type2="int")</code></pre>
+
+    <p>
+      The semantic difference is subtle but critical:
+    </p>
+
+    <ul>
+      <li><strong><code>assert</code></strong> is a debugging aid. The compiler is <em>allowed</em> to remove it under <code>-O</code>.</li>
+      <li><strong><code>if</code></strong> is control flow. The compiler can <em>never</em> remove it.</li>
+    </ul>
+
+    <h3>Never Use assert for Control Flow</h3>
+
+    <p>
+      This is a well-known Python gotcha, but it keeps resurfacing. The Python
+      documentation is explicit:
+    </p>
+
+    <blockquote>
+      "Assertions should not be used for data validation or control flow.
+      They are debugging aids that can be disabled at runtime."
+      — <em>Python Documentation, <code>assert</code> statement</em>
+    </blockquote>
+
+    <p>
+      The reason is exactly this scenario: production deployments often run with
+      <code>-O</code> or <code>-OO</code> for performance, and any logic hidden
+      behind <code>assert</code> silently disappears.
+    </p>
+
+    <!-- ── 4. Reproducing the Bug ── -->
+    <h2>4. Reproducing the Bug</h2>
+
+    <pre><code class="language-bash"># Run Python with -OO flag
+python3 -OO -c "
+import coreforecast
+# Segfault or ImportError!
+"</code></pre>
+
+    <pre><code class="language-python"># Minimal reproduction
+class Model:
+    def __init__(self):
+        """Init with {param_type} support."""
+
+# This works normally
+try:
+    assert Model.__init__.__doc__
+    Model.__init__.__doc__ = Model.__init__.__doc__.format(param_type="float")
+    print(Model.__init__.__doc__)
+except (AttributeError, AssertionError) as e:
+    print(f'Error: {e}')
+
+# Under -OO, assert is removed, __doc__ is None:
+#   → AttributeError: 'NoneType' object has no attribute 'format'
+# Fixed version:
+if Model.__init__.__doc__:
+    Model.__init__.__doc__ = Model.__init__.__doc__.format(param_type="float")</code></pre>
+
+    <!-- ── 5. Lessons for Production Python ── -->
+    <h2>5. Why This Matters</h2>
+
+    <p>
+      This bug is a textbook example of why <strong>assert is not control flow</strong>.
+      For production Python deployments:
+    </p>
+
+    <h3>Defensive Patterns</h3>
+
+    <ul>
+      <li>Always use <code>if</code> / <code>else</code> for runtime guards, never <code>assert</code></li>
+      <li>Test your code with <code>python3 -OO -c "import your_package"</code></li>
+      <li>CI pipelines should test the <code>-OO</code> path, especially for C extensions</li>
+    </ul>
+
+    <h3>C Extension Safety</h3>
+
+    <p>
+      C extensions are particularly vulnerable because:
+    </p>
+
+    <ul>
+      <li>A Python exception in module init may not be safely caught by C code</li>
+      <li>The GIL state may be inconsistent, leading to segfaults</li>
+      <li>Memory allocated before the exception may not be freed</li>
+    </ul>
+
+    <p>
+      Libraries like NumPy, SciPy, and pandas have all had similar bugs over the years.
+      The fix is always the same: move critical guards from <code>assert</code> to
+      <code>if</code>.
+    </p>
+
+    <!-- ── 6. Related Contributions ── -->
+    <h2>6. Related Deep-Dives</h2>
+
+    <ul>
+      <li>
+        <a href="../trl-5644-gemma-token-type-ids/">Gemma-3 token_type_ids in TRL</a> —
+        RLHF training with the latest LLMs
+      </li>
+      <li>
+        <a href="../darts-3087-float16-tft/">Float16 Training for TFT in darts</a> —
+        Mixed-precision for time series transformers
+      </li>
+      <li>
+        <a href="../scipy-25070-savgol-coeffs/">Edge Cases in savgol_coeffs</a> —
+        Savitzky-Golay filter validation
+      </li>
+    </ul>
+
+    <hr style="margin: 48px 0; border: none; border-top: 1px solid var(--border);">
+
+    <p style="text-align: center; color: var(--muted); font-size: 0.9rem;">
+      <em>Found this useful?</em> · <a href="https://github.com/robrui">Follow on GitHub</a> · <a href="https://www.linkedin.com/in/robert-ruidisch/">Connect on LinkedIn</a>
+    </p>
+
+  </div>
+</div>
+
+</article>
+
+<footer>
+  <div class="container">
+    <div class="social-links">
+      <a href="https://github.com/robrui">GitHub</a>
+      <a href="https://www.linkedin.com/in/robert-ruidisch/">LinkedIn</a>
+      <a href="mailto:robert.ruidisch@gmail.com">Email</a>
+    </div>
+    <p>© 2025 Robert Ruidisch</p>
+  </div>
+</footer>
+
+</body>
+</html>
