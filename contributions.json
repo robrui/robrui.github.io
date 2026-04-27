@@ -9,10 +9,123 @@
   "meta": {
     "description": "Curated open-source contributions with learning summaries for blog/portfolio",
     "format_version": "1.0",
-    "last_updated": "2026-04-26",
-    "total_contributions": 12
+    "last_updated": "2026-04-27",
+    "total_contributions": 16
   },
   "contributions": [
+    {
+      "date": "2026-04-27",
+      "repo": "pytorch/pytorch",
+      "pr_number": 181465,
+      "pr_url": "https://github.com/pytorch/pytorch/pull/181465",
+      "title": "Fix torch.fx.Tracer.record_stack_traces regression (user frames filtered by internal PyTorch frames)",
+      "category": "pytorch-fx",
+      "difficulty": "advanced",
+      "tags": [
+        "pytorch",
+        "fx",
+        "stack-traces",
+        "tracing",
+        "debugging"
+      ],
+      "issue_url": "https://github.com/pytorch/pytorch/issues/130861",
+      "learning_summary": "CapturedTraceback.extract() replaced _find_user_frame, causing stack traces to include internal PyTorch frames instead of user code",
+      "detailed_summary": "Der record_stack_traces-Mechanismus in torch.fx wurde beschädigt, als _find_user_frame durch CapturedTraceback.extract().summary() ersetzt wurde. Die neue Implementierung erfasste alle Frames inklusive interner PyTorch-Infrastruktur-Frames (proxy.py, _ops.py, _tensor.py usw.). Der Fix fügt _filter_traceback_frames hinzu: eine Liste bekannter interner PyTorch-Dateien, die vom Ende des Stack-Trace abgeschnitten werden.",
+      "skills_developed": [
+        "PyTorch internals",
+        "Stack trace analysis",
+        "Symbolic tracing (FX)",
+        "Python frame inspection"
+      ],
+      "blog_body": "## Wenn PyTorch Stack Traces plötzlich nutzlos sind: Ein Regression-Fix in torch.fx\n\n### Das Problem\ntorch.fx.Tracer(record_stack_traces=True) erzeugt Stack Traces, die nur interne PyTorch-Dateien zeigen - keine User-Code-Frames mehr.\n\n### Die Ursache\nEine Refactoring-Änderung ersetzte die Hilfsfunktion _find_user_frame durch CapturedTraceback.extract().summary(). Die alte Methode durchsuchte gezielt nach dem ersten User-Frame außerhalb von PyTorch. Die neue Methode sammelte einfach alle Frames - und da der letzte Call im Stack meist aus torch/_ops.py oder proxy.py kommt, landete nur PyTorch-interner Code im Trace.\n\n### Die Lösung\n_filter_traceback_frames erhält eine Liste interner PyTorch-Dateien und schneidet diese vom Ende des Stack-Trace ab.\n\n### Was ich gelernt habe\n1. Stack Trace Filtering ist tricky: Das Ende des Stacks ist der aktuellste Frame - oft der interessanteste für Debugging, aber bei FX-Tracing eben interner PyTorch-Code.\n2. PyTorch FX ist mächtig, aber fragil: Eine Hilfsfunktion zu ersetzen hat weitreichende Folgen.\n3. Regression-Fixes sind oft komplexer als neue Features - man muss das alte Verhalten genau verstehen und neu implementieren.\n4. Das PyTorch-Core-Team hat 126 Checks auf dem PR laufen - die Infrastruktur ist beeindruckend.",
+      "status": "open",
+      "notes": "Open on GitHub."
+    },
+    {
+      "date": "2026-04-27",
+      "repo": "unit8co/darts",
+      "pr_number": 3087,
+      "pr_url": "https://github.com/unit8co/darts/pull/3087",
+      "title": "[BUG] Fix _ScaledDotProductAttention float16 overflow in masked_fill under mixed precision",
+      "category": "time-series",
+      "difficulty": "intermediate",
+      "tags": [
+        "time-series",
+        "darts",
+        "pytorch",
+        "attention",
+        "mixed-precision",
+        "float16",
+        "tft"
+      ],
+      "issue_url": "https://github.com/unit8co/darts/issues/3081",
+      "learning_summary": "Hardcoded -1e9 mask fill value overflows float16 under PyTorch AMP mixed precision, crashing TFTModel training",
+      "detailed_summary": "In darts' _ScaledDotProductAttention wurde -1e9 für masked_fill verwendet. Unter AMP (precision=16-mixed) sind Attention-Interna im float16-Format. -1e9 ist in float16 nicht darstellbar, masked_fill crashed. Fix: torch.finfo(attn.dtype).min + korrekter Device/Dtype.",
+      "skills_developed": [
+        "Mixed precision training",
+        "Attention mechanisms",
+        "PyTorch AMP",
+        "Time series transformers"
+      ],
+      "blog_body": "## Wenn Attention unter Mixed Precision crasht: float16 Overflow in darts\n\n### Das Problem\nTFTModel(pl_trainer_kwargs={'precision': '16-mixed'}) → RuntimeError in _ScaledDotProductAttention.masked_fill.\n\n### Die Ursache\nDie Attention-Implementierung verwendete einen harten Wert -1e9 für masked_fill:\n\nattn = attn.masked_fill(mask == 0, -1e9)\n\nUnter float16 (AMP) liegt -1e9 weit außerhalb des Wertebereichs (float16 max: 65504). masked_fill crashed, weil der Wert nicht konvertiert werden kann.\n\n### Die Lösung\nfill_val = torch.finfo(attn.dtype).min\nattn = attn.masked_fill(mask == 0, fill_val)\n\nPlus korrekter Device/Dtype für den Scaling-Tensor.\n\n### Was ich gelernt habe\n1. Mixed Precision ist kein Drop-In: float16 hat einen engeren Wertebereich.\n2. torch.finfo ist der richtige Weg, dtype-abhängige Grenzwerte zu erhalten.\n3. Darts verwendet PyTorch Lightning - der precision-Parameter propagiert durch den gesamten Stack.\n4. Hardcoded -1e9 in Attention ist ein häufiges Anti-Pattern in vielen Repos.",
+      "status": "open",
+      "notes": "Open on GitHub. 13 comment(s)"
+    },
+    {
+      "date": "2026-04-27",
+      "repo": "numpy/numpy",
+      "pr_number": 31341,
+      "pr_url": "https://github.com/numpy/numpy/pull/31341",
+      "title": "BUG: fix np.interp with empty arrays to return empty array",
+      "category": "numpy-array",
+      "difficulty": "beginner",
+      "tags": [
+        "numpy",
+        "interpolation",
+        "empty-arrays",
+        "edge-cases"
+      ],
+      "issue_url": "https://github.com/numpy/numpy/issues/30316",
+      "learning_summary": "np.interp([], [], []) should return an empty array instead of raising ValueError",
+      "detailed_summary": "Der vorherige PR #31327 wurde nicht gemerged. Neuer Versuch: np.interp([], [], []) wirft ValueError. Bei leerem x gibt es keine Punkte zu interpolieren - das korrekte Ergebnis ist ein leeres Array. Early return im Python-Wrapper vor dem C-Code.",
+      "skills_developed": [
+        "Numpy internals",
+        "Python/C boundary",
+        "Edge case handling",
+        "Test-driven debugging"
+      ],
+      "blog_body": "## np.interp([], [], []) - Ein einfacher Fix, zweiter Versuch\n\n### Das Problem\nnp.interp([], [], []) → ValueError: 'array of sample points is empty'.\n\n### Die Ursache\ndie C-Implementierung prüft if (lenxp == 0) und wirft einen Fehler. Der Fall x=0 wird nicht separat behandelt.\n\n### Warum der zweite Versuch?\nDer erste PR (#31327) wurde nicht gemerged. Der neue PR (#31341) ist cleaner: early return im Python-Wrapper vor dem C-Call.\n\n### Die Lösung\nif all(a.size == 0 for a in [x, xp, fp]):\n    return np.array([], dtype=input_dtype)\n\n### Was ich gelernt habe\n1. Manchmal braucht es mehrere Anläufe. Der zweite Fix ist minimal und klar.\n2. Numpy hat strikte Trennung zwischen Python-Wrapper und C-Core.\n3. Empty Arrays sind ein Edge Case den viele übersehen.",
+      "status": "open",
+      "notes": "Open on GitHub."
+    },
+    {
+      "date": "2026-04-27",
+      "repo": "scipy/scipy",
+      "pr_number": 25075,
+      "pr_url": "https://github.com/scipy/scipy/pull/25075",
+      "title": "BUG: fix get_sum_dtype to return np.dtype instead of scalar type",
+      "category": "scipy-sparse",
+      "difficulty": "beginner",
+      "tags": [
+        "scipy",
+        "numpy",
+        "dtype",
+        "sparse",
+        "type-safety"
+      ],
+      "issue_url": "https://github.com/scipy/scipy/issues/23076",
+      "learning_summary": "get_sum_dtype returned scalar types (np.uint, np.int_) instead of proper np.dtype, causing type mismatches",
+      "detailed_summary": "get_sum_dtype in scipy.sparse._sputils gibt np.uint und np.int_ zurück - NumPy-Skalar-Typen statt np.dtype-Instanzen. Fix: np.dtype(np.uint) und np.dtype(np.int_).",
+      "skills_developed": [
+        "NumPy dtype system",
+        "Scipy sparse internals",
+        "Type safety",
+        "Legacy API compatibility"
+      ],
+      "blog_body": "## np.uint vs np.dtype(np.uint): Ein Typ-Fehler mit 5 Jahren Geschichte\n\n### Das Problem\nget_sum_dtype in scipy.sparse._sputils gibt np.uint und np.int_ zurück - das sind NumPy-Skalartypen, keine np.dtype-Instanzen.\n\n### Die Ursache\nNumPy hat zwei Konzepte: dtype-Objekte (np.dtype('uint64')) und skalare Typen (np.uint64). get_sum_dtype gab skalare Typen zurück. Funktioniert meistens, aber Code der np.dtype erwartet crashed.\n\n### Die Lösung\nZwei Zeilen ändern:\n- return np.uint → return np.dtype(np.uint)\n- return np.int_ → return np.dtype(np.int_)\n\n### Was ich gelernt habe\n1. np.dtype und np.uint/int_ sind nicht austauschbar.\n2. Der Bug lag 5 Jahre unentdeckt.\n3. Type Safety ist auch in Python wichtig.",
+      "status": "open",
+      "notes": "Open on GitHub."
+    },
     {
       "date": "2026-04-26",
       "repo": "scipy/scipy",
@@ -30,16 +143,16 @@
       ],
       "issue_url": "https://github.com/scipy/scipy/issues/23604",
       "learning_summary": "CWT peak detection bug: SNR computed at the end of each ridge instead of ridge maximum, causing false negatives",
-      "detailed_summary": "In scipy.signal.find_peaks_cwt wurde das SNR (Signal-Rausch-Verhältnis) fälschlicherweise am Ende jedes Ridges statt an dessen Maximum berechnet. Die Funktion calculate_prc verwendet max(cwt_data) entlang der Ridge, aber die Ridge-Werte repräsentieren die CWT-Koeffizienten, deren Betrag am Ridge-Maximum am größten ist - nicht zwangsweise am Ende. Der Fix: snr = max(cwt_data[(r, c)]) statt snr = cwt_data[(r, c)]. Ein Einzeiler-Fix mit substanzieller Wirkung auf reale Signale.",
+      "detailed_summary": "In scipy.signal.find_peaks_cwt wurde das SNR fälschlicherweise am Ende jedes Ridges statt an dessen Maximum berechnet. Fix: snr = max(cwt_data[(r, c)]) statt snr = cwt_data[(r, c)].",
       "skills_developed": [
         "Signal processing",
         "Continuous wavelet transform",
         "Ridge detection",
         "SciPy internals"
       ],
-      "blog_body": "## Ein Einzeiler, der echte Peaks rettet: find_peaks_cwt SNR Bug\n\n### Das Problem\nscipy.signal.find_peaks_cwt übersieht Peaks in verrauschten Signalen. Die Ursache: SNR wird am Ende jedes Ridges berechnet statt an dessen Maximum.\n\n### Die Mathematik\nCWT = Wavelet-Skalogramm über Frequenzbänder. Ein Ridge ist der Pfad maximaler Koeffizienten durch die Zeit-Frequenz-Ebene. Das SNR sollte dort gemessen werden, wo das Signal am stärksten ist - am Ridge-Maximum.\n\nDie fehlerhafte Zeile: snr = cwt_data[(r, c)] - nimmt den aktuellen Punkt (oft das Ende). Der Fix: snr = max(cwt_data[(r, c)]) - nimmt das Maximum über alle bisherigen Punkte dieser Ridge.\n\n### Was ich gelernt habe\n1. CWT ist kein Blackbox: Ridge Detection, SNR-Messung, und wie sie zusammenhängen.\n2. Ein Einzeiler-Fix kann Monate altes Issue lösen.\n3. Die richtige SNR-Definition in CWT ist nicht trivial: Rauschschätzung über Median der unteren Wavelet-Skalen.\n4. Tests in scipy.signal sind robust - alle 6 CWT-Tests bestehen.",
+      "blog_body": "## Ein Einzeiler, der echte Peaks rettet: find_peaks_cwt SNR Bug\n\n### Das Problem\nscipy.signal.find_peaks_cwt übersieht Peaks in verrauschten Signalen.\n\n### Die Ursache\nSNR wird am Ende jedes Ridges berechnet statt an dessen Maximum.\n\n### Die Lösung\nsnr = max(cwt_data[(r, c)]) - Ein Einzeiler-Fix.\n\n### Was ich gelernt habe\n1. CWT Ridge Detection ist nicht trivial.\n2. Ein Einzeiler-Fix kann Monate altes Issue lösen.\n3. Die richtige SNR-Definition in CWT braucht Rauschschätzung über Median der unteren Skalen.",
       "status": "open",
-      "notes": "Open on GitHub. no comments"
+      "notes": "Open on GitHub."
     },
     {
       "date": "2026-04-26",
@@ -58,16 +171,16 @@
       ],
       "issue_url": "https://github.com/huggingface/trl/issues/5032",
       "learning_summary": "Gemma-3 models require explicit token_type_ids; GRPOTrainer didn't pass them, crashing during packed sequence RL training",
-      "detailed_summary": "Gemma-3 Modelle benötigen explizite token_type_ids (anders als Llama/GPT etc.), aber GRPOTrainer und PPOTrainer haben diese nicht an die generate()-Funktion übergeben. Bei gepackten Sequenzen (DataCollatorForCompletionOnlyLM) fehlen token_type_ids komplett, was zu einem ValueError führt. Fix in 5 Dateien: model-agnostisches Padding/Packing und token_type_ids-Übergabe in generate(), sowie korrekte Erzeugung in GRPOConfig und PPOConfig.",
+      "detailed_summary": "Gemma-3 Modelle benötigen explizite token_type_ids, aber GRPOTrainer und PPOTrainer haben diese nicht übergeben. Fix in 5 Dateien.",
       "skills_developed": [
         "RLHF training loops",
         "HuggingFace TRL internals",
         "Model-specific tokenization",
         "Packed sequence processing"
       ],
-      "blog_body": "## Gemma-3 und TRL: Warum token_type_ids RL-Training crashen lassen\n\n### Das Problem\ntrl.GRPOTrainer.train() mit gemma-3 Basis-Modell -> ValueError: token_type_ids must be provided.\n\n### Die Ursache\nGemma-3 verwendet ein eigenes Attention-Masking-Schema, das token_type_ids benötigt. Die TRL-Trainer (GRPO + PPO) haben generate() ohne token_type_ids aufgerufen.\n\nBei gepackten Sequenzen (DataCollatorForCompletionOnlyLM) werden mehrere Samples in eine Sequenz gepackt. token_type_ids unterscheiden Prompt von Completion - ohne sie kann das Modell nicht unterscheiden.\n\n### Die Lösung\ntoken_type_ids in generate() übergeben + DataCollator-Padding anpassen. 25 Zeilen fix, 5 Dateien.\n\n### Was ich gelernt habe\n1. Jeder Model-Typ hat Eigenheiten. Gemma-3 ist kein Llama-Klon.\n2. TRL Trainer abstrahieren generate()-Calls mehrfach - der Bug lag in 3 Schichten.\n3. HuggingFace bot auto-closed first PR (fehlende AI-Declaration-Checkbox). Zweiter Versuch erfolgreich.\n4. Model-Agnostizität vs. Model-Spezifik: TRL will generisch sein, aber Modelle brauchen spezifisches Handling.",
+      "blog_body": "## Gemma-3 und TRL: Warum token_type_ids RL-Training crashen lassen\n\n### Das Problem\ntrl.GRPOTrainer.train() mit gemma-3 → ValueError: token_type_ids must be provided.\n\n### Die Ursache\nGemma-3 Attention-Masking braucht token_type_ids. TRL-Trainer haben generate() ohne sie aufgerufen.\n\n### Die Lösung\ntoken_type_ids in generate() übergeben + DataCollator-Padding anpassen.\n\n### Was ich gelernt habe\n1. Jeder Model-Typ hat Eigenheiten.\n2. TRL abstrahiert generate()-Calls mehrfach.\n3. HuggingFace bot auto-closed first PR (fehlende AI-Declaration).",
       "status": "open",
-      "notes": "Open on GitHub. no comments"
+      "notes": "Open on GitHub."
     },
     {
       "date": "2026-04-26",
@@ -86,16 +199,16 @@
       ],
       "issue_url": "https://github.com/Nixtla/statsforecast/issues/1135",
       "learning_summary": "Theta forecast produces NaN prediction intervals when len(y) == 4 because sigma calculation uses ddof=1 on a single residual",
-      "detailed_summary": "AutoTheta(season_length=1).forecast(y, h=3, level=[95]) gibt NaN für lo-95 und hi-95 zurück, wenn len(y) == 4. Ursache: in theta.py:233 wird np.std(residuals[3:], ddof=1) berechnet. Nach dem Burn-in von 3 Schritten bleibt genau 1 Residual übrig, und ddof=1 teilt durch 0 (da N-1 = 0), was NaN sigma produziert. Der Fix erkennt den Fall: wenn weniger als 2 Residuen nach dem Burn-in übrig sind, werden alle Residuen (ohne Burn-in) für die Sigma-Schätzung verwendet, mit einer Warnung.",
+      "detailed_summary": "AutoTheta mit len(y)==4: sigma = np.std(residuals[3:], ddof=1) → N-1=0 → NaN.",
       "skills_developed": [
         "Time series forecasting",
         "Theta method internals",
         "Numerical stability",
         "Edge case handling"
       ],
-      "blog_body": "## Wenn Theta NaN Prediction Intervals produziert: Ein Fall für kurze Serien\n\n### Das Problem\nAutoTheta(season_length=1).forecast(y, h=3, level=[95]) gibt NaN Prediction Intervals zurück, wenn len(y) == 4.\n\nDer Rest der Vorhersage funktioniert, aber die Konfidenzintervalle sind NaN.\n\n### Die Ursache\nIn theta.py Zeile 233 wird die Standardabweichung der Residuen berechnet:\n\nsigma = np.std(obj[\"residuals\"][3:], ddof=1)\n\nDer [3:]-Slice ist der Burn-in: die ersten 3 Residuen werden verworfen. Bei len(y) == 4 gibt es genau 4 Residuen, also nach dem Slice nur noch 1 einziges Residuum. np.std(..., ddof=1) mit 1 Element teilt durch N-1 = 0 und produziert NaN.\n\n### Die Lösung\nEin einfacher Guard:\n\nresiduals = obj[\"residuals\"]\nif len(residuals) - 3 < 2:\n    sigma = np.std(residuals, ddof=1)\nelse:\n    sigma = np.std(residuals[3:], ddof=1)\n\nMit einer warnings.warn() wenn auf den Fallback-Pfad gefallen wird.\n\n### Was ich gelernt habe\n1. Burn-in in Zeitreihenmodellen: Theta wirft die ersten 3 Residuen weg, weil die Schätzung initial instabil ist.\n2. ddof=1 versteckt NaN-Falle: N-1 im Nenner ist Standard für Stichproben-Stdabw., aber bei N=1 wird daraus Division by Zero.\n3. Statsforecast ist eine C-Extension: Der thetacalc ist in Cython, aber die Sigma-Schätzung war im Python-Wrapper.\n4. Kurze Serien sind reale Use Cases: Gerade in Produktion mit wenig Historie sind kurze Serien häufig.",
+      "blog_body": "## Wenn Theta NaN Prediction Intervals produziert\n\n### Das Problem\nAutoTheta(season_length=1).forecast(y, h=3, level=[95]) gibt NaN für Konfidenzintervalle bei len(y)==4.\n\n### Die Ursache\nsigma = np.std(residuals[3:], ddof=1) - nach Burn-in nur 1 Residual, ddof=1 teilt durch 0.\n\n### Die Lösung\nif len(residuals) - 3 < 2: sigma = np.std(residuals, ddof=1)\n\n### Was ich gelernt habe\n1. ddof=1 versteckt NaN-Falle bei N=1.\n2. Kurze Serien sind in Produktion häufig.",
       "status": "open",
-      "notes": "Open on GitHub. no comments"
+      "notes": "Open on GitHub."
     },
     {
       "date": "2026-04-26",
@@ -113,17 +226,17 @@
         "statsforecast"
       ],
       "issue_url": "https://github.com/Nixtla/statsforecast/issues/1140",
-      "learning_summary": "SeasonalNaive shifted seasonal alignment by 13 weeks when len(y) < season_length because observations started at position 0 instead of aligning to the end",
-      "detailed_summary": "SeasonalNaive speichert historische Beobachtungen in einem Array der Länge season_length. Wenn len(y) < season_length, wurden die Beobachtungen am Anfang des Arrays (Position 0) gespeichert. Die Vorhersagen starten dann ab Position 0, was den saisonalen Zyklus verschiebt. Beispiel: Weekly-Serie mit 39 Wochen und season_length=52 - die Vorhersage für KW 1 2026 bekam den Wert von KW 14 2025, nicht den von KW 1 (NaN). Fix: Array am Ende füllen, unbeobachtete Positionen als NaN lassen.",
+      "learning_summary": "SeasonalNaive shifted seasonal alignment when len(y) < season_length because observations started at position 0 instead of aligning to the end",
+      "detailed_summary": "SeasonalNaive speichert Beobachtungen am Array-Anfang statt -Ende bei len(y) < season_length. Fix: Array am Ende füllen.",
       "skills_developed": [
         "Time series forecasting",
         "Seasonal modeling",
         "Array indexing logic",
         "Nixtla internals"
       ],
-      "blog_body": "## SeasonalNaive: Wenn saisonale Vorhersagen 13 Wochen daneben liegen\n\n### Das Problem\nSeasonalNaive(season_length=52) mit nur 39 Wochen Historie produziert Vorhersagen, die 13 Wochen verschoben sind.\n\nBeispiel: Woche 1 von 2026 bekommt den Wert von Woche 14 von 2025, nicht NaN oder den korrekten Wert von Woche 1.\n\n### Die Ursache\nSeasonalNaive speichert die letzten season_length Beobachtungen in einem Ringpuffer-Array. Bei len(y) < season_length wurden die Daten von Position 0 an abgelegt:\n\nseason_vals = np.empty(season_length) * np.nan\nseason_vals[:len(y)] = y  # alt: beginnt bei Position 0\n\nBei der Vorhersage werden ab Position 0 Werte ausgegeben. Ein Nutzer erwartet aber, dass die Vorhersage dort startet, wo seine Daten enden:\n\nseason_vals[-len(y):] = y  # neu: ans Ende, NaN an nicht beobachteten Positionen\n\n### Die Lösung\nEin Einzeiler: Array am Ende statt am Anfang füllen. Saisonale Positionen ohne Daten bleiben NaN.\n\n### Was ich gelernt habe\n1. Saisonale Naive ist nicht trivial: Der einfachste Forecast-Master zeigt schon subtile Indexierungs-Bugs.\n2. Ringpuffer-Logik: Saisonale Modelle speichern implizit einen Ringpuffer der Länge season_length. Die Konvention ist entscheidend.\n3. Test-Suite Coverage: Es gab Tests für len(y) > season_length, aber nicht für den Fall darunter.\n4. Realwelt-Beispiel: Weekly-Forecast mit 39 Datenpunkten (KW 14-52) und season_length=52 ist ein häufiges Szenario.",
+      "blog_body": "## SeasonalNaive: Wenn Vorhersagen Wochen daneben liegen\n\n### Das Problem\nSeasonalNaive(season_length=52) mit 39 Wochen → Vorhersagen sind 13 Wochen verschoben.\n\n### Die Ursache\nseason_vals[:len(y)] = y (bei Position 0) statt season_vals[-len(y):] = y (ans Ende).\n\n### Die Lösung\nArray am Ende füllen, NaN an unbeobachteten Positionen.\n\n### Was ich gelernt habe\n1. Ringpuffer-Logik: Die Konvention ist entscheidend.\n2. Test-Suite Coverage: Tests fehlten für len(y) < season_length.",
       "status": "open",
-      "notes": "Open on GitHub. no comments"
+      "notes": "Open on GitHub."
     },
     {
       "date": "2026-04-26",
@@ -142,14 +255,14 @@
       ],
       "issue_url": "https://github.com/Nixtla/coreforecast/issues/130",
       "learning_summary": "Under PYTHONOPTIMIZE=2 (-OO), __doc__ is None, causing segfaults in rolling.py/expanding.py",
-      "detailed_summary": "Wenn Python mit -OO (PYTHONOPTIMIZE=2) läuft, werden Docstrings aus dem Bytecode entfernt - __doc__ ist None, nicht der übliche String. In coreforecasts rolling.py und expanding.py wurden __doc__-Strings fälschlicherweise als Bedingungen in control flow verwendet (if 'value' in __doc__: ...). Mit PYTHONOPTIMIZE=2 crasht 'value' in None -> TypeError -> Segfault in der C-Extension. Fix: Optionalen Docstring mit None-check sichern: if __doc__ and 'value' in __doc__.",
+      "detailed_summary": "PYTHONOPTIMIZE=2 entfernt Docstrings. __doc__ in Bedingung ('value' in __doc__) crasht → TypeError → Segfault in C-Extension.",
       "skills_developed": [
         "Python runtime internals",
         "C-extension debugging",
         "Optimization levels",
         "Segfault analysis"
       ],
-      "blog_body": "## Wenn Python -OO dein Programm segfaulten lässt: coreforecast unter PYTHONOPTIMIZE=2\n\n### Das Problem\npython -OO -c \"from coreforecast import *\" -> Segmentation Fault.\n\n### Die Ursache\nPython's -OO flag entfernt Docstrings (__doc__ = None). In rolling.py und expanding.py wurde __doc__ direkt in Bedingungen verwendet:\n\nif 'value' in __doc__:\n    ...\n\n# Mit -OO wird daraus:\nif 'value' in None:  # TypeError!\n\nDer TypeError wird von der C-Extension nicht korrekt abgefangen -> Segfault.\n\n### Die Lösung\nif __doc__ and 'value' in __doc__: - None-Check vor String-Operation.\n\n### Was ich gelernt habe\n1. PYTHONOPTIMIZE=2 ist aggressiver als erwartet: Es entfernt nicht nur assert, sondern auch Docstrings.\n2. Segfaults in Python kommen oft von C-Extensions, die Python-Exceptions nicht propagieren können.\n3. __doc__ als Bedingung zu verwenden ist praktisch, aber bricht unter -OO.\n4. Nixtlas coreforecast ist eine Cython/C-Extension - der Fix lag im Python-Wrapper, nicht im C-Code.",
+      "blog_body": "## Wenn Python -OO dein Programm segfaulten lässt\n\n### Das Problem\npython -OO -c \"from coreforecast import *\" → Segmentation Fault.\n\n### Die Ursache\n__doc__ = None unter -OO. 'value' in None → TypeError → Segfault.\n\n### Die Lösung\nif __doc__ and 'value' in __doc__:\n\n### Was ich gelernt habe\n1. PYTHONOPTIMIZE=2 entfernt Docstrings.\n2. Segfaults kommen von C-Extensions, die Exceptions nicht propagieren.",
       "status": "open",
       "notes": "Open on GitHub. 1 comment(s)"
     },
@@ -169,15 +282,15 @@
         "edge-cases"
       ],
       "issue_url": "https://github.com/scipy/scipy/issues/22940",
-      "learning_summary": "Floating-point modulo can produce exactly 2*pi, causing sawtooth(width=1) to divide by zero in the falling-ramp formula",
-      "detailed_summary": "Die Funktion scipy.signal.sawtooth() produziert NaN, wenn width=1 gesetzt ist und der Eingabewert durch IEEE-754-Rundung im Modulo exakt 2*pi ergibt (z.B. sawtooth(-1e-16)). Ursache: (-1e-16) % (2*pi) = 2*pi - 1e-16, aber 1e-16 liegt unter der halben Ulp von 2*pi, daher rundet das Ergebnis auf exakt 2*pi. Der Vergleich tmod < 2*pi schlägt fehl, der Wert fällt in die fallende Rampe, die durch (1-width) = 0 teilt. Der Fix erkennt width ca. 1 und width ca. 0 als Edge Cases und verwendet die korrekte Ein-Rampen-Formel.",
+      "learning_summary": "Floating-point modulo can produce exactly 2*pi, causing sawtooth(width=1) to divide by zero",
+      "detailed_summary": "Floating-point modulo kann exakt 2*pi ergeben → Wert fällt in fallende Rampe → Division durch (1-width)=0 → NaN.",
       "skills_developed": [
         "Signal processing",
         "Floating-point arithmetic",
         "SciPy internals",
         "Array API compatibility"
       ],
-      "blog_body": "## Wenn sawtooth(width=1) NaN produziert: Ein Floating-Point-Bug in SciPy\n\n### Das Problem\nscipy.signal.sawtooth(-1e-16, width=1) gibt NaN zurück.\n\n### Die Ursache\nDie Sägezahn-Funktion teilt das Intervall [0, 2*pi) in zwei Bereiche. Bei width=1 soll die steigende Rampe das gesamte Intervall abdecken. Der Bug liegt in der IEEE 754-Arithmetik: (-1e-16) % (2*pi) = 2*pi - 1e-16. Aber 1e-16 ist so klein, dass das Ergebnis auf exakt 2*pi gerundet wird. Der Vergleich tmod < 2*pi wird False, der Wert fällt in den fallenden Bereich - Division durch (1 - width) = 0, NaN.\n\n### Die Lösung\nwidth ca. 1 und width ca. 0 werden als Spezialfälle behandelt. Bei width=1 wird direkt die steigende Rampe angewendet.\n\n### Was ich gelernt habe\n1. Floating Point ist nicht trivial: Modulo mit pi ist präzise genug für die meisten Fälle, aber nicht für alle.\n2. Indirekte Division-by-Zero: Der Bug entsteht durch Kombination von FP-Rundung und striktem Vergleich.\n3. API-Kompatibilität: SciPy Pythran-Unterstützung und der Array-API-Layer müssen beachtet werden.",
+      "blog_body": "## Wenn sawtooth(width=1) NaN produziert\n\n### Das Problem\nscipy.signal.sawtooth(-1e-16, width=1) → NaN.\n\n### Die Ursache\nIEEE 754: (-1e-16) % (2*pi) rundet auf exakt 2*pi. tmod < 2*pi wird False → Division durch 0.\n\n### Die Lösung\nwidth≈1 und width≈0 als Spezialfälle behandeln.\n\n### Was ich gelernt habe\n1. Floating Point Modulo mit pi ist tricky.\n2. Indirekte Division-by-Zero durch FP-Rundung + strikten Vergleich.",
       "status": "closed",
       "notes": "Closed, not merged."
     },
@@ -196,15 +309,15 @@
         "edge-cases"
       ],
       "issue_url": "https://github.com/numpy/numpy/issues/30316",
-      "learning_summary": "np.interp with all-empty arguments should return an empty array rather than crashing",
-      "detailed_summary": "Wenn np.interp mit leeren Arrays ([], [], []) aufgerufen wird, gibt es einen ValueError aus, weil die C-Implementierung leere xp-Arrays ablehnt. Bei leerem x gibt es jedoch keine Punkte zu interpolieren - das korrekte Ergebnis ist ein leeres Array. Der Fix fängt leeres x früh in der Python-Wrapper-Funktion ab, bevor der C-Code aufgerufen wird.",
+      "learning_summary": "np.interp with all-empty arguments should return an empty array",
+      "detailed_summary": "np.interp([], [], []) → ValueError. Bei leerem x gibt es nichts zu interpolieren.",
       "skills_developed": [
         "Numpy internals",
         "C-Python interaction",
         "Empty array edge cases",
         "Interpolation theory"
       ],
-      "blog_body": "## Wenn np.interp mit leeren Arrays crasht: Ein simpler Fix mit Tiefgang\n\n### Das Problem\nnp.interp([], [], []) -> ValueError. Aber wenn x leer ist, gibt es nichts zu interpolieren.\n\n### Die Ursache\nDie C-Implementierung prüft if (lenxp == 0) und wirft einen Fehler. Übersieht den Fall x=0.\n\n### Warum es Jahre unentdeckt blieb\nWeil np.interp([], [1, 2], [3, 4]) bereits funktioniert! Nur der Fall \"alle drei leer\" triggert den Bug.\n\n### Die Lösung\nFrüher Return im Python-Wrapper: Wenn x.size == 0, gib ein leeres Array zurück.\n\n### Was ich gelernt habe\n1. np.interp delegiert an C-Code - der Bug war tief versteckt.\n2. Vier unabhängige Leute haben das gleiche Issue gefixt, aber keiner hat durchgehalten.\n3. Ein fix der nur 3 Zeilen ändert kann 4 PR-Versuche und Monate brauchen.",
+      "blog_body": "## Wenn np.interp mit leeren Arrays crasht\n\n### Das Problem\nnp.interp([], [], []) → ValueError.\n\n### Die Ursache\nC-Code prüft lenxp==0, übersieht x=0.\n\n### Die Lösung\nif x.size == 0: return empty array.\n\n### Was ich gelernt habe\n1. np.interp delegiert an C-Code.\n2. Vier Leute haben unabhängig gefixt.",
       "status": "closed",
       "notes": "Closed, not merged."
     },
@@ -223,16 +336,16 @@
         "rtd"
       ],
       "issue_url": "https://github.com/OpenPipe/ART/issues/339",
-      "learning_summary": "Python module resolution with sys.path and how __init__.py shadowing can break cross-module imports",
-      "detailed_summary": "Im ART Repo gab es eine Kollision zwischen der Funktion 'ruler' und dem Import des Submoduls 'ruler' in der __init__.py. Python sucht zuerst im aktuellen Namespace, daher verdeckte die Export-Funktion den Submodul-Import. Gelöst durch ein 'import ... as ...' alias.",
+      "learning_summary": "Python module resolution: __init__.py shadowing breaks cross-module imports",
+      "detailed_summary": "Funktion 'ruler' verdeckte Submodul-Import. Gelöst durch Alias-Import.",
       "skills_developed": [
         "Python import system",
         "Module resolution debugging",
         "__init__.py patterns"
       ],
-      "blog_body": "## Python Import Fallstricke: Wenn eine Funktion dein Modul verdeckt\n\n### Das Problem\nIn OpenPipe/ART existiert ein Modul art.rewards.ruler und eine gleichnamige Export-Funktion in der __init__.py.\n\n### Die Lösung\nAlias-Import: from . import ruler as _ruler_module vermeidet die Kollision.\n\n### Was ich gelernt habe\nPython's Import-System ist nicht magisch - es sucht Namen in Namespaces. Ein sauberer __init__.py muss Name-Kollisionen vermeiden.",
+      "blog_body": "## Python Import Fallstricke\n\n### Das Problem\nFunktion 'ruler' und Modul 'ruler' in __init__.py kollidieren.\n\n### Die Lösung\nfrom . import ruler as _ruler_module\n\n### Was ich gelernt habe\nPython sucht zuerst im aktuellen Namespace.",
       "status": "open",
-      "notes": "Open on GitHub. no comments"
+      "notes": "Open on GitHub."
     },
     {
       "date": "2026-04-24",
@@ -249,17 +362,17 @@
         "loss-functions"
       ],
       "issue_url": "https://github.com/huggingface/trl/issues/5588",
-      "learning_summary": "GRPO KL penalty produces noise gradients when all responses in a group have identical rewards",
-      "detailed_summary": "Im GRPOTrainer werden Rewards normalisiert: (r - mean(r)) / std(r). Bei identischen Rewards in einer Gruppe ist std(r)=0. Ein epsilon-Clip verhindert NaN, aber erzeugt Spurious Gradients - der KL-Term propagiert trotzdem, obwohl der Reward-Term keine Information liefert. Gelöst durch Masking der KL-Gradients wenn std(r) etwa 0 ist.",
+      "learning_summary": "GRPO KL penalty produces noise gradients when all responses have identical rewards",
+      "detailed_summary": "std(r)=0 bei identischen Rewards. KL-Term propagiert ohne Reward-Signal. Gelöst durch KL-Gradient Masking.",
       "skills_developed": [
         "RL loss design",
         "Gradient analysis",
         "GRPO algorithm",
         "Numerical stability"
       ],
-      "blog_body": "## Wenn KL-Divergenz dein Training sabotiert: Spurious Gradients in GRPO\n\n### Das Problem\nGRPO normalisiert Rewards: advantages = (r - mean(r)) / std(r). Wenn alle Antworten identische Rewards bekommen, ist std(r)=0.\n\n### Die Lösung\nKL-Gradients maskieren wenn std(r) effektiv Null ist: kl_loss = kl_loss * 0.0 detacht.\n\n### Was ich gelernt habe\nRL-Training mit KL-Penalty ist ein Balanceakt. Wenn das Reward-Signal ausfällt, darf der KL-Term nicht allein weiterlernen.",
+      "blog_body": "## Wenn KL-Divergenz Training sabotiert\n\n### Das Problem\nGRPO: std(r)=0 bei identischen Rewards.\n\n### Die Lösung\nkl_loss = kl_loss * 0.0 detach() wenn std(r)≈0.\n\n### Was ich gelernt habe\nRL + KL-Penalty ist ein Balanceakt.",
       "status": "open",
-      "notes": "Open on GitHub. no comments"
+      "notes": "Open on GitHub."
     },
     {
       "date": "2026-04-24",
@@ -276,15 +389,15 @@
         "edge-cases"
       ],
       "issue_url": "https://github.com/scipy/scipy/issues/24512",
-      "learning_summary": "Savitzky-Golay filter with even window lengths silently produces incorrect results due to half-integer coefficient positions",
-      "detailed_summary": "Der Savitzky-Golay Filter in scipy liefert bei geraden Fensterlängen stumm falsche Ergebnisse. Ursache: savgol_coeffs() berechnet Koeffizienten bei pos = halflen - 0.5 (halbe Position), aber savgol_filter() wendet sie via convolve1d() bei ganzzahligen Positionen an. Gelöst durch ValueError und Warnung.",
+      "learning_summary": "Savitzky-Golay with even windows silently produces incorrect results",
+      "detailed_summary": "Savitzky-Golay mit geraden Fenstern: Koeffizienten bei halben Positionen, angewandt bei ganzen → falsch.",
       "skills_developed": [
         "Signal processing",
         "Filter theory",
         "Numerical stability",
         "API design"
       ],
-      "blog_body": "## Wenn dein Signal-Filter stumm falsch rechnet: Savitzky-Golay mit geraden Fenstern\n\n### Das Problem\nsavgol_filter(data, 4, 2) gibt eine Ausgabe ohne Fehler - aber das Ergebnis ist falsch.\n\n### Die Ursache\nSG-Filter fittet ein Polynom und wertet am Mittelpunkt aus. Bei Fenster 4 gibt es keinen echten Mittelpunkt.\n\n### Die Lösung\nValueError für gerade Fenster in savgol_filter().\n\n### Was ich gelernt habe\nManchmal ist der beste Fix, früh zu scheitern statt stumm falsch zu rechnen.",
+      "blog_body": "## Wenn Filter stumm falsch rechnen\n\n### Das Problem\nsavgol_filter(data, 4, 2) → falsch, kein Fehler.\n\n### Die Lösung\nValueError für gerade Fenster.\n\n### Was ich gelernt habe\nFrüh scheitern ist besser als stumm falsch rechnen.",
       "status": "closed",
       "notes": "Closed, not merged."
     },
@@ -304,13 +417,13 @@
       ],
       "issue_url": "https://github.com/numpy/numpy/pull/31325",
       "learning_summary": "numpy.linalg.pinv crashes with TypeError when rtol=None and input is integer dtype",
-      "detailed_summary": "Wenn numpy.linalg.pinv mit rtol=None auf einem Integer-Array aufgerufen wird, crasht es weil finfo() keine Integer-Typen unterstützt. Der Code hat nicht geprüft ob der Input-Dtype ein Float ist. Gelöst durch float64-Konvertierung vor der finfo-Berechnung.",
+      "detailed_summary": "pinv mit rtol=None: finfo() für Integer nicht unterstützt. Fix: float64-Konvertierung vor finfo.",
       "skills_developed": [
         "Numpy internals",
         "Linear algebra",
         "Error handling patterns"
       ],
-      "blog_body": "## numpy.linalg.pinv TypeError: Wenn finfo auf Integer trifft\n\n### Das Problem\nnp.linalg.pinv(int_array, rtol=None) -> TypeError.\n\n### Die Ursache\npinv mit rtol=None berechnet rtol = max(rows, cols) * finfo(dtype).eps. Integer haben keinen eps-Wert.\n\n### Die Lösung\nFloat-Konvertierung vor finfo.\n\n### Was ich gelernt habe\nNumpy unterscheidet strikt zwischen Integer und Float. Viele Algorithmen brauchen float-Eigenschaften wie eps.",
+      "blog_body": "## numpy.linalg.pinv TypeError\n\n### Das Problem\nnp.linalg.pinv(int_array, rtol=None) → TypeError.\n\n### Die Ursache\nfinfo(dtype).eps: Integer haben keinen eps.\n\n### Die Lösung\nFloat-Konvertierung vor finfo.\n\n### Was ich gelernt habe\nInteger und Float haben unterschiedliche Eigenschaften.",
       "status": "open",
       "notes": "Open on GitHub. 2 comment(s)"
     },
@@ -330,13 +443,13 @@
       ],
       "issue_url": "https://github.com/numpy/numpy/issues/31210",
       "learning_summary": "numpy.random.choice with shuffle=False was silently ignored when non-uniform probabilities were provided",
-      "detailed_summary": "Generator.choice hat shuffle=False ignoriert, wenn nicht-uniforme Wahrscheinlichkeiten (p) angegeben wurden. Der uniforme Pfad hatte einen korrekten shuffle-Check, aber der nicht-uniforme Pfad hat immer geshuffelt. Fix: _shuffle_int nur bei shuffle=True aufrufen.",
+      "detailed_summary": "shuffle=False ignoriert bei nicht-uniformen Wahrscheinlichkeiten. Fix: _shuffle_int nur bei shuffle=True.",
       "skills_developed": [
         "Numpy internals",
         "Random sampling",
         "API contract analysis"
       ],
-      "blog_body": "## numpy.random.choice: Wenn shuffle=False nicht das tut was es sagt\n\n### Das Problem\nrng.choice(4, 4, replace=False, shuffle=False, p=[...]) -> Ergebnis ist geshuffelt.\n\n### Die Ursache\nDer nicht-uniforme Sampling-Pfad hatte keinen check für den shuffle-Parameter.\n\n### Die Lösung\nif shuffle: _shuffle_int(...) - einfache Bedingung, übersehener Spezialfall.\n\n### Was ich gelernt habe\n300 Zeilen Cython schwer zu debuggen. Viele Code-Pfade, viele Edge Cases.",
+      "blog_body": "## Wenn shuffle=False nicht tut was es sagt\n\n### Das Problem\nrng.choice(4, 4, replace=False, shuffle=False, p=[...]) → geshuffelt.\n\n### Die Lösung\nif shuffle: _shuffle_int(...)\n\n### Was ich gelernt habe\n300 Zeilen Cython, viele Code-Pfade.",
       "status": "closed",
       "notes": "Closed, not merged."
     }
